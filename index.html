@@ -2204,7 +2204,7 @@ function switchTab(feature, tab) {
 
  panel.querySelectorAll('.fp-content').forEach(c => c.classList.remove('active'));
 
- const tabEl = panel.querySelector.fp-tab[onclick*="'${tab}'"]);
+ const tabEl = panel.querySelector(`.fp-tab[onclick*="'${tab}'"]`);
 
  if (tabEl) tabEl.classList.add('active');
 
@@ -2280,4 +2280,6 @@ function checkStr(val) {
 
  });
 
- c
+ document.getElementById('str-lbl').textContent = score > 0 ? labels[score-1] : '';
+
+}
