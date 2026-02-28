@@ -1,0 +1,1016 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ULoop — Mind Map Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#080812;--ink2:#11112a;--ink3:#1a1a35;
+  --gold:#e8b84b;--gold2:#f5d080;--gold-glow:rgba(232,184,75,.25);
+  --green:#2dd4a0;--blue:#60b8f5;--rose:#f56565;--orange:#f7a04f;
+  --text:#e8e5de;--muted:#7a7890;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.14);
+  --purple:#7c6af7;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--ink);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* BG */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.bg-mesh{position:absolute;inset:0;background:
+  radial-gradient(ellipse 60% 50% at 15% 10%,rgba(124,106,247,.07) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 60% at 85% 80%,rgba(45,212,160,.05) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 40% at 50% 40%,rgba(232,184,75,.04) 0%,transparent 60%);}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:52px 52px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes aiDot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:18px 44px;background:rgba(8,8,18,.8);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.6rem;color:#fff;cursor:pointer;}
+.nav-logo span{color:var(--purple);}
+.nav-back{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:50px;padding:8px 18px;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;transition:.2s;}
+.nav-back:hover{color:var(--text);background:rgba(255,255,255,.1);}
+
+/* ── PAGE SYSTEM ── */
+.page{display:none;position:relative;z-index:1;padding:100px 44px 60px;min-height:100vh;}
+.page.active{display:block;animation:fadeIn .3s ease;}
+
+/* ══════════════════════════════
+   MIND MAP HOME PAGE
+══════════════════════════════ */
+#pg-mindmap-home .mh-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--purple);letter-spacing:4px;text-transform:uppercase;margin-bottom:14px;}
+#pg-mindmap-home .mh-title{font-family:'Fraunces',serif;font-size:clamp(2.5rem,5vw,4.2rem);font-weight:900;line-height:1.05;color:#fff;margin-bottom:12px;}
+#pg-mindmap-home .mh-title em{font-style:italic;background:linear-gradient(135deg,#c4b8ff,var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#pg-mindmap-home .mh-sub{color:var(--muted);font-size:1rem;max-width:480px;line-height:1.75;margin-bottom:60px;}
+
+.hub-cards-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;max-width:900px;}
+.hub-card{border-radius:28px;padding:38px 36px;cursor:pointer;transition:all .4s cubic-bezier(.23,1,.32,1);position:relative;overflow:hidden;}
+.hub-card::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.05),transparent 60%);opacity:0;transition:opacity .4s;}
+.hub-card:hover::after{opacity:1;}
+.hub-card:hover{transform:translateY(-8px) scale(1.01);}
+
+/* Card Themes */
+.hc-subjects{background:linear-gradient(145deg,#1a1740,#221e50);border:1px solid rgba(124,106,247,.35);}
+.hc-subjects:hover{box-shadow:0 24px 64px rgba(124,106,247,.25);border-color:rgba(124,106,247,.6);}
+.hc-aplus{background:linear-gradient(145deg,#1a2a18,#1e3020);border:1px solid rgba(45,212,160,.25);}
+.hc-aplus:hover{box-shadow:0 24px 64px rgba(45,212,160,.2);border-color:rgba(45,212,160,.5);}
+.hc-clubs{background:linear-gradient(145deg,#2a1818,#301e1a);border:1px solid rgba(247,160,79,.25);}
+.hc-clubs:hover{box-shadow:0 24px 64px rgba(247,160,79,.2);border-color:rgba(247,160,79,.5);}
+.hc-news{background:linear-gradient(145deg,#18202a,#1a2534);border:1px solid rgba(96,184,245,.25);}
+.hc-news:hover{box-shadow:0 24px 64px rgba(96,184,245,.2);border-color:rgba(96,184,245,.5);}
+
+.hc-icon-wrap{width:68px;height:68px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin-bottom:22px;transition:.4s;}
+.hub-card:hover .hc-icon-wrap{transform:scale(1.12) rotate(-6deg);}
+.hc-subjects .hc-icon-wrap{background:rgba(124,106,247,.2);border:1px solid rgba(124,106,247,.35);}
+.hc-aplus .hc-icon-wrap{background:rgba(45,212,160,.15);border:1px solid rgba(45,212,160,.3);}
+.hc-clubs .hc-icon-wrap{background:rgba(247,160,79,.15);border:1px solid rgba(247,160,79,.3);}
+.hc-news .hc-icon-wrap{background:rgba(96,184,245,.15);border:1px solid rgba(96,184,245,.3);}
+
+.hc-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.63rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;border-radius:50px;margin-bottom:12px;}
+.hc-subjects .hc-tag{background:rgba(124,106,247,.15);color:#c4b8ff;border:1px solid rgba(124,106,247,.25);}
+.hc-aplus .hc-tag{background:rgba(45,212,160,.12);color:var(--green);border:1px solid rgba(45,212,160,.25);}
+.hc-clubs .hc-tag{background:rgba(247,160,79,.12);color:var(--orange);border:1px solid rgba(247,160,79,.25);}
+.hc-news .hc-tag{background:rgba(96,184,245,.12);color:var(--blue);border:1px solid rgba(96,184,245,.25);}
+
+.hc-name{font-family:'Fraunces',serif;font-size:1.55rem;font-weight:700;color:#fff;margin-bottom:8px;}
+.hc-desc{font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:24px;}
+.hc-enter{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 18px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.83rem;color:var(--muted);transition:.3s;}
+.hub-card:hover .hc-enter{color:var(--text);}
+.hc-subjects:hover .hc-enter{background:rgba(124,106,247,.12);border-color:rgba(124,106,247,.3);}
+.hc-aplus:hover .hc-enter{background:rgba(45,212,160,.1);border-color:rgba(45,212,160,.3);}
+.hc-clubs:hover .hc-enter{background:rgba(247,160,79,.1);border-color:rgba(247,160,79,.3);}
+.hc-news:hover .hc-enter{background:rgba(96,184,245,.1);border-color:rgba(96,184,245,.3);}
+.hc-preview-dots{display:flex;gap:6px;margin-top:16px;}
+.hc-dot{width:8px;height:8px;border-radius:50%;opacity:.6;}
+
+/* ══════════════════════════════
+   SHARED INNER PAGE STYLES
+══════════════════════════════ */
+.pg-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;}
+.pg-title{font-family:'Fraunces',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;color:#fff;margin-bottom:8px;line-height:1.1;}
+.pg-sub{color:var(--muted);font-size:.9rem;line-height:1.7;max-width:560px;margin-bottom:40px;}
+
+.breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:28px;font-size:.82rem;color:var(--muted);flex-wrap:wrap;}
+.bc-link{cursor:pointer;transition:.2s;}
+.bc-link:hover{color:var(--gold);}
+.bc-sep{opacity:.4;}
+.bc-current{color:var(--text);}
+
+.btn-back{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:50px;padding:9px 18px;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;transition:.2s;margin-bottom:28px;}
+.btn-back:hover{color:var(--text);background:rgba(255,255,255,.1);}
+
+/* ══════════════════════════════
+   SUBJECTS PAGE
+══════════════════════════════ */
+.subjects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.subj-card{background:var(--ink2);border:1px solid var(--border);border-radius:20px;padding:26px;cursor:pointer;transition:all .35s;position:relative;overflow:hidden;}
+.subj-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .4s;}
+.subj-card:hover{transform:translateY(-5px);border-color:rgba(255,255,255,.18);box-shadow:0 16px 48px rgba(0,0,0,.5);}
+.subj-card:hover::before{opacity:1;}
+.subj-ico{font-size:2.4rem;margin-bottom:14px;display:block;}
+.subj-name{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:6px;}
+.subj-desc{font-size:.8rem;color:var(--muted);line-height:1.5;}
+.subj-arr{position:absolute;bottom:20px;right:20px;width:30px;height:30px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--muted);transition:.25s;}
+.subj-card:hover .subj-arr{background:var(--purple);border-color:var(--purple);color:#fff;}
+
+/* SUBJECT DETAIL */
+.subj-detail-header{background:linear-gradient(135deg,var(--ink2),var(--ink3));border:1px solid var(--border);border-radius:24px;padding:36px;margin-bottom:28px;display:flex;align-items:center;gap:24px;}
+.sdh-ico{font-size:3.8rem;flex-shrink:0;}
+.sdh-title{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:900;color:#fff;margin-bottom:6px;}
+.sdh-meta{font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.tele-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#229ED9,#1a8bc4);border:none;border-radius:12px;padding:11px 22px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.85rem;color:#fff;cursor:pointer;transition:.3s;text-decoration:none;}
+.tele-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(34,158,217,.4);}
+.tele-ico{width:16px;height:16px;}
+
+.books-lbl{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--purple);letter-spacing:3px;text-transform:uppercase;margin-bottom:18px;}
+.books-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.book-card{border-radius:18px;padding:26px;cursor:pointer;transition:all .35s;position:relative;overflow:hidden;}
+.book-card:hover{transform:translateY(-5px);}
+.book-card.lvl-b{background:linear-gradient(145deg,#0f2018,#142a1e);border:1px solid rgba(45,212,160,.3);}
+.book-card.lvl-b:hover{box-shadow:0 16px 40px rgba(45,212,160,.2);border-color:rgba(45,212,160,.6);}
+.book-card.lvl-i{background:linear-gradient(145deg,#2a1f0a,#32260c);border:1px solid rgba(232,184,75,.3);}
+.book-card.lvl-i:hover{box-shadow:0 16px 40px rgba(232,184,75,.2);border-color:rgba(232,184,75,.6);}
+.book-card.lvl-a{background:linear-gradient(145deg,#2a0f0f,#341414);border:1px solid rgba(245,101,101,.3);}
+.book-card.lvl-a:hover{box-shadow:0 16px 40px rgba(245,101,101,.2);border-color:rgba(245,101,101,.6);}
+.book-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:50px;margin-bottom:14px;}
+.lvl-b .book-badge{background:rgba(45,212,160,.15);color:var(--green);border:1px solid rgba(45,212,160,.3);}
+.lvl-i .book-badge{background:rgba(232,184,75,.12);color:var(--gold);border:1px solid rgba(232,184,75,.25);}
+.lvl-a .book-badge{background:rgba(245,101,101,.12);color:var(--rose);border:1px solid rgba(245,101,101,.25);}
+.book-ico{font-size:2.8rem;display:block;margin-bottom:14px;}
+.book-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.3;}
+.book-author{font-size:.75rem;color:var(--muted);margin-bottom:14px;}
+.book-chap-count{font-size:.78rem;color:var(--muted2,#5a5870);}
+.book-prog-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:14px;overflow:hidden;}
+.book-prog-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+.lvl-b .book-prog-fill{background:var(--green);}
+.lvl-i .book-prog-fill{background:var(--gold);}
+.lvl-a .book-prog-fill{background:var(--rose);}
+.book-pct{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);margin-top:6px;}
+
+/* CHAPTERS LIST */
+.chap-book-header{background:var(--ink2);border:1px solid var(--border);border-radius:18px;padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;gap:16px;}
+.cbh-ico{font-size:2.4rem;}
+.cbh-title{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:700;color:#fff;margin-bottom:3px;}
+.cbh-sub{font-size:.78rem;color:var(--muted);}
+.chapters-list{display:flex;flex-direction:column;gap:8px;}
+.chap-row{background:var(--ink2);border:1px solid var(--border);border-radius:14px;padding:18px 22px;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:14px;}
+.chap-row:hover:not(.chap-locked){background:var(--ink3);border-color:rgba(255,255,255,.15);transform:translateX(4px);}
+.chap-row.chap-locked{opacity:.5;cursor:not-allowed;}
+.chap-num{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);min-width:34px;}
+.chap-info{flex:1;}
+.chap-name{font-weight:600;font-size:.9rem;color:#fff;margin-bottom:3px;}
+.chap-hint{font-size:.73rem;color:var(--muted);}
+.chap-ring-wrap{flex-shrink:0;position:relative;width:42px;height:42px;}
+.ring-svg{transform:rotate(-90deg);}
+.r-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:3;}
+.r-fill{fill:none;stroke-width:3;stroke-linecap:round;}
+.ring-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.56rem;font-weight:600;}
+.lock-icon{font-size:1rem;color:var(--muted);flex-shrink:0;}
+
+/* ══════════════════════════════
+   QUIZ MODAL
+══════════════════════════════ */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(16px);z-index:800;align-items:center;justify-content:center;padding:20px;}
+.modal-ov.open{display:flex;}
+.quiz-box{background:var(--ink2);border:1px solid var(--border2);border-radius:26px;max-width:620px;width:100%;max-height:92vh;overflow-y:auto;animation:popIn .4s ease;}
+.qbox-head{padding:30px 34px 0;border-bottom:1px solid var(--border);padding-bottom:22px;margin-bottom:26px;}
+.q-chap-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.q-book-title{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:14px;}
+.qprog-bar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.qprog-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--green));border-radius:2px;transition:width .4s ease;}
+.qbox-body{padding:0 34px;}
+.q-count{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);margin-bottom:10px;}
+.q-text{font-size:1rem;color:#fff;font-weight:500;line-height:1.65;margin-bottom:22px;}
+.options-list{display:flex;flex-direction:column;gap:9px;}
+.opt-btn{background:rgba(255,255,255,.04);border:1.5px solid var(--border);border-radius:13px;padding:14px 18px;cursor:pointer;font-size:.88rem;color:var(--text);text-align:left;transition:.2s;font-family:'DM Sans',sans-serif;}
+.opt-btn:hover:not(.o-sel):not(.o-right):not(.o-wrong){border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);}
+.opt-btn.o-sel{border-color:var(--gold);background:rgba(232,184,75,.1);color:var(--gold);}
+.opt-btn.o-right{border-color:var(--green);background:rgba(45,212,160,.12);color:var(--green);}
+.opt-btn.o-wrong{border-color:var(--rose);background:rgba(245,101,101,.1);color:var(--rose);}
+.qbox-footer{display:flex;align-items:center;justify-content:space-between;padding:20px 34px 30px;}
+.q-score-lbl{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted);}
+.btn-qnext{background:linear-gradient(135deg,var(--purple),#9b5cf4);color:#fff;border:none;padding:11px 26px;border-radius:11px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;transition:.2s;display:none;}
+.btn-qnext.show{display:block;}
+.btn-qnext:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,106,247,.4);}
+.quiz-result-wrap{text-align:center;padding:36px 34px;}
+.qr-emoji{font-size:4.5rem;display:block;margin-bottom:18px;}
+.qr-score{font-family:'Fraunces',serif;font-size:3.5rem;font-weight:900;margin-bottom:10px;}
+.qr-pass{color:var(--green);}
+.qr-fail{color:var(--rose);}
+.qr-msg{font-size:.9rem;color:var(--muted);line-height:1.8;margin-bottom:28px;}
+.qr-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-qr-primary{background:linear-gradient(135deg,var(--purple),#9b5cf4);color:#fff;border:none;padding:12px 26px;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:.2s;}
+.btn-qr-primary:hover{transform:translateY(-2px);}
+.btn-qr-secondary{background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--muted);padding:12px 26px;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.9rem;cursor:pointer;transition:.2s;}
+.btn-qr-secondary:hover{color:var(--text);}
+
+/* Lock toast */
+.toast{display:none;position:fixed;top:76px;left:50%;transform:translateX(-50%);background:rgba(245,101,101,.12);border:1px solid rgba(245,101,101,.35);border-radius:12px;padding:12px 22px;font-size:.85rem;color:var(--rose);z-index:900;backdrop-filter:blur(20px);white-space:nowrap;}
+
+/* ══════════════════════════════
+   A+ STUDENTS
+══════════════════════════════ */
+.aplus-banner{background:linear-gradient(135deg,rgba(45,212,160,.08),rgba(45,212,160,.03));border:1px solid rgba(45,212,160,.2);border-radius:20px;padding:28px 32px;margin-bottom:30px;display:flex;align-items:center;gap:20px;}
+.ab-ico{font-size:2.8rem;}
+.ab-title{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:5px;}
+.ab-sub{font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:12px;}
+.btn-ask-all{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#229ED9,#1a8bc4);border:none;border-radius:11px;padding:10px 20px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.83rem;color:#fff;cursor:pointer;transition:.3s;}
+.btn-ask-all:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(34,158,217,.4);}
+.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;}
+.stu-card{background:var(--ink2);border:1px solid var(--border);border-radius:18px;padding:22px;transition:all .3s;position:relative;}
+.stu-card:hover{transform:translateY(-4px);border-color:rgba(45,212,160,.3);box-shadow:0 14px 36px rgba(0,0,0,.4);}
+.stu-av{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:1.1rem;color:#fff;margin-bottom:12px;border:2px solid rgba(45,212,160,.2);}
+.stu-name{font-weight:700;font-size:.95rem;color:#fff;margin-bottom:3px;}
+.stu-major{font-size:.78rem;color:var(--muted);margin-bottom:10px;}
+.stu-gpa{display:inline-flex;align-items:center;gap:5px;background:rgba(232,184,75,.12);border:1px solid rgba(232,184,75,.2);border-radius:50px;padding:3px 11px;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--gold);margin-bottom:8px;}
+.stu-tele{font-family:'JetBrains Mono',monospace;font-size:.73rem;color:var(--blue);margin-bottom:14px;}
+.stu-btns{display:flex;gap:8px;}
+.btn-ask-stu{flex:1;background:linear-gradient(135deg,#229ED9,#1a8bc4);border:none;border-radius:9px;padding:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.78rem;color:#fff;cursor:pointer;transition:.2s;}
+.btn-ask-stu:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(34,158,217,.4);}
+.btn-view-profile{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:9px;padding:8px 13px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.78rem;color:var(--muted);cursor:pointer;transition:.2s;}
+.btn-view-profile:hover{color:var(--text);background:rgba(255,255,255,.1);}
+
+/* Profile Modal */
+.profile-box{background:var(--ink2);border:1px solid var(--border2);border-radius:26px;max-width:460px;width:100%;max-height:90vh;overflow-y:auto;animation:popIn .4s ease;position:relative;}
+.profile-banner{height:96px;border-radius:26px 26px 0 0;}
+.profile-av-big{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:1.6rem;color:#fff;border:3px solid var(--ink2);position:absolute;bottom:-34px;left:24px;}
+.profile-body{padding:48px 26px 26px;}
+.profile-name{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:3px;}
+.profile-major{font-size:.82rem;color:var(--muted);margin-bottom:14px;}
+.profile-stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pstat-box{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:11px;padding:12px 14px;}
+.pstat-val{font-family:'Fraunces',serif;font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:2px;}
+.pstat-lbl{font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.5px;}
+.profile-tele{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--blue);margin-bottom:18px;}
+.ask-form-inner{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.ask-form-lbl{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.ask-ta{width:100%;min-height:85px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:11px;padding:11px 14px;color:var(--text);font-size:.85rem;outline:none;font-family:'DM Sans',sans-serif;resize:vertical;margin-bottom:11px;}
+.ask-ta:focus{border-color:rgba(34,158,217,.4);}
+.ask-ta::placeholder{color:#3a3858;}
+.btn-send{width:100%;background:linear-gradient(135deg,#229ED9,#1a8bc4);color:#fff;border:none;padding:11px;border-radius:11px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:.2s;}
+.btn-send:hover{transform:translateY(-1px);}
+.send-ok{background:rgba(45,212,160,.1);border:1px solid rgba(45,212,160,.2);border-radius:10px;padding:10px;font-size:.8rem;color:var(--green);text-align:center;margin-top:8px;display:none;}
+.mclose{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:var(--muted);z-index:10;transition:.2s;}
+.mclose:hover{background:rgba(245,101,101,.15);color:var(--rose);}
+
+/* ══════════════════════════════
+   CLUBS
+══════════════════════════════ */
+.clubs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.club-card{background:var(--ink2);border:1px solid var(--border);border-radius:20px;padding:26px;cursor:pointer;transition:all .35s;}
+.club-card:hover{transform:translateY(-5px);border-color:rgba(247,160,79,.4);box-shadow:0 16px 44px rgba(0,0,0,.4);}
+.club-ico{font-size:2.6rem;margin-bottom:14px;display:block;}
+.club-name{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:6px;}
+.club-tagline{font-size:.8rem;color:var(--muted);line-height:1.5;}
+.club-detail-wrap{animation:slideIn .3s ease;}
+.club-dhead{background:linear-gradient(135deg,var(--ink2),var(--ink3));border:1px solid var(--border);border-radius:22px;padding:32px;margin-bottom:22px;display:flex;align-items:flex-start;gap:20px;}
+.cdh-ico{font-size:3.2rem;flex-shrink:0;}
+.cdh-name{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:700;color:#fff;margin-bottom:6px;}
+.cdh-desc{font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:14px;}
+.club-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.cig-card{background:var(--ink2);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
+.cig-ico{font-size:1.3rem;margin-bottom:8px;display:block;}
+.cig-lbl{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+.cig-val{font-weight:600;font-size:.88rem;color:#fff;}
+.coord-section{background:var(--ink2);border:1px solid var(--border);border-radius:16px;padding:22px;}
+.coord-lbl{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;}
+.coord-row{display:flex;align-items:center;gap:14px;}
+.coord-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:.95rem;color:#fff;flex-shrink:0;}
+.coord-name{font-weight:700;font-size:.92rem;color:#fff;margin-bottom:2px;}
+.coord-role{font-size:.75rem;color:var(--muted);margin-bottom:8px;}
+.coord-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#229ED9,#1a8bc4);border:none;border-radius:9px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.76rem;color:#fff;cursor:pointer;transition:.2s;text-decoration:none;}
+.coord-btn:hover{transform:translateY(-1px);}
+
+/* ══════════════════════════════
+   NEWS
+══════════════════════════════ */
+.news-filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.nf-btn{font-family:'DM Sans',sans-serif;font-weight:600;font-size:.8rem;padding:7px 16px;border-radius:50px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:.25s;}
+.nf-btn.on{background:linear-gradient(135deg,var(--blue),#3a9de0);border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(96,184,245,.3);}
+.news-list{display:flex;flex-direction:column;gap:12px;}
+.news-card{background:var(--ink2);border:1px solid var(--border);border-radius:16px;padding:22px 24px;transition:all .25s;}
+.news-card:hover{border-color:rgba(255,255,255,.14);transform:translateX(4px);}
+.nc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.nc-cat{font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:3px 11px;border-radius:50px;}
+.nc-event{background:rgba(232,184,75,.1);color:var(--gold);border:1px solid rgba(232,184,75,.2);}
+.nc-club{background:rgba(45,212,160,.1);color:var(--green);border:1px solid rgba(45,212,160,.2);}
+.nc-academic{background:rgba(96,184,245,.1);color:var(--blue);border:1px solid rgba(96,184,245,.2);}
+.nc-announce{background:rgba(245,101,101,.1);color:var(--rose);border:1px solid rgba(245,101,101,.2);}
+.nc-date{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);}
+.nc-title{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:7px;line-height:1.3;}
+.nc-body{font-size:.84rem;color:var(--muted);line-height:1.7;}
+.nc-footer{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.nc-org{font-size:.72rem;color:#3a3858;font-family:'JetBrains Mono',monospace;}
+.nc-sep{width:3px;height:3px;background:#3a3858;border-radius:50%;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  nav{padding:14px 18px;}
+  .page{padding:80px 18px 40px;}
+  .hub-cards-grid{grid-template-columns:1fr;}
+  .books-grid,.club-info-grid,.profile-stats-row{grid-template-columns:1fr;}
+  .subjects-grid,.students-grid,.clubs-grid{grid-template-columns:1fr;}
+  .subj-detail-header{flex-direction:column;align-items:flex-start;}
+  .quiz-box{border-radius:18px;}
+  .qbox-head,.qbox-body,.qbox-footer{padding-left:20px;padding-right:20px;}
+}
+</style>
+</head>
+<body>
+<div class="bg"><div class="bg-mesh"></div><div class="bg-grid"></div></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="goTo('pg-mindmap-home')">U<span>Loop</span></div>
+  <button class="nav-back" id="navBack" style="display:none" onclick="handleBack()">← Back</button>
+</nav>
+
+<!-- ══════════════ PAGES ══════════════ -->
+
+<!-- 1. MIND MAP HOME -->
+<div class="page active" id="pg-mindmap-home">
+  <div class="mh-eyebrow">✦ Learning Hub</div>
+  <h1 class="mh-title">Mind Map &amp;<br><em>Learning Hub</em></h1>
+  <p class="mh-sub">Your all-in-one campus companion. Explore subjects, connect with top students, discover clubs, and stay updated with university news.</p>
+  <div class="hub-cards-grid">
+    <div class="hub-card hc-subjects" onclick="goTo('pg-subjects')">
+      <div class="hc-icon-wrap">📚</div>
+      <span class="hc-tag">Self-paced</span>
+      <div class="hc-name">Subjects</div>
+      <div class="hc-desc">Explore 6 subjects. Study from beginner to advanced, track chapter progress, unlock levels and join your subject community.</div>
+      <div class="hc-enter"><span>Explore subjects</span><span>→</span></div>
+      <div class="hc-preview-dots">
+        <div class="hc-dot" style="background:#c4b8ff"></div>
+        <div class="hc-dot" style="background:var(--green)"></div>
+        <div class="hc-dot" style="background:var(--gold)"></div>
+        <div class="hc-dot" style="background:var(--rose)"></div>
+      </div>
+    </div>
+    <div class="hub-card hc-aplus" onclick="goTo('pg-aplus')">
+      <div class="hc-icon-wrap">⭐</div>
+      <span class="hc-tag">GPA 3.0+</span>
+      <div class="hc-name">A+ Students</div>
+      <div class="hc-desc">Connect with high-achieving students. Ask questions individually or broadcast to all A+ students at once.</div>
+      <div class="hc-enter"><span>Meet A+ students</span><span>→</span></div>
+      <div class="hc-preview-dots">
+        <div class="hc-dot" style="background:var(--green)"></div>
+        <div class="hc-dot" style="background:var(--gold)"></div>
+        <div class="hc-dot" style="background:var(--blue)"></div>
+      </div>
+    </div>
+    <div class="hub-card hc-clubs" onclick="goTo('pg-clubs')">
+      <div class="hc-icon-wrap">🏛️</div>
+      <span class="hc-tag">Campus life</span>
+      <div class="hc-name">Clubs</div>
+      <div class="hc-desc">Zakovat, Art, Chinese, Tennis and more. See schedules, join Telegram groups, and contact club coordinators.</div>
+      <div class="hc-enter"><span>Discover clubs</span><span>→</span></div>
+      <div class="hc-preview-dots">
+        <div class="hc-dot" style="background:var(--orange)"></div>
+        <div class="hc-dot" style="background:var(--rose)"></div>
+        <div class="hc-dot" style="background:var(--green)"></div>
+      </div>
+    </div>
+    <div class="hub-card hc-news" onclick="goTo('pg-news')">
+      <div class="hc-icon-wrap">📰</div>
+      <span class="hc-tag">Live updates</span>
+      <div class="hc-name">News</div>
+      <div class="hc-desc">University events, club announcements, academic updates — everything happening at Webster University.</div>
+      <div class="hc-enter"><span>Read latest news</span><span>→</span></div>
+      <div class="hc-preview-dots">
+        <div class="hc-dot" style="background:var(--blue)"></div>
+        <div class="hc-dot" style="background:var(--gold)"></div>
+        <div class="hc-dot" style="background:var(--green)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. SUBJECTS LIST -->
+<div class="page" id="pg-subjects">
+  <div class="breadcrumb"><span class="bc-link" onclick="goTo('pg-mindmap-home')">Mind Map</span><span class="bc-sep">›</span><span class="bc-current">Subjects</span></div>
+  <div class="pg-eyebrow" style="color:var(--purple)">✦ 6 Subjects Available</div>
+  <h2 class="pg-title">Choose a Subject</h2>
+  <p class="pg-sub">Pick a subject to explore its books, track your chapter progress, and join the student community.</p>
+  <div class="subjects-grid" id="subjectsGrid"></div>
+</div>
+
+<!-- 3. SUBJECT DETAIL (books + community) -->
+<div class="page" id="pg-subject-detail">
+  <div class="breadcrumb" id="subjDetailBc"></div>
+  <div id="subjDetailContent"></div>
+</div>
+
+<!-- 4. CHAPTERS LIST -->
+<div class="page" id="pg-chapters">
+  <div class="breadcrumb" id="chapsBc"></div>
+  <div id="chapsContent"></div>
+</div>
+
+<!-- 5. A+ STUDENTS -->
+<div class="page" id="pg-aplus">
+  <div class="breadcrumb"><span class="bc-link" onclick="goTo('pg-mindmap-home')">Mind Map</span><span class="bc-sep">›</span><span class="bc-current">A+ Students</span></div>
+  <div class="aplus-banner">
+    <div class="ab-ico">⭐</div>
+    <div>
+      <div class="ab-title">A+ Student Network</div>
+      <p class="ab-sub">Connect with high-achieving students (GPA 3.0+). Ask questions individually or send to everyone at once.</p>
+      <button class="btn-ask-all" onclick="openAskAll()">💬 Ask All A+ Students</button>
+    </div>
+  </div>
+  <div class="students-grid" id="studentsGrid"></div>
+</div>
+
+<!-- 6. CLUBS LIST -->
+<div class="page" id="pg-clubs">
+  <div class="breadcrumb"><span class="bc-link" onclick="goTo('pg-mindmap-home')">Mind Map</span><span class="bc-sep">›</span><span class="bc-current">Clubs</span></div>
+  <div class="pg-eyebrow" style="color:var(--orange)">✦ 4 Active Clubs</div>
+  <h2 class="pg-title">Student Clubs</h2>
+  <p class="pg-sub">Discover clubs, join their Telegram groups, and connect with coordinators for schedules and details.</p>
+  <div id="clubsListView"><div class="clubs-grid" id="clubsGrid"></div></div>
+  <div id="clubDetailView" style="display:none"></div>
+</div>
+
+<!-- 7. NEWS -->
+<div class="page" id="pg-news">
+  <div class="breadcrumb"><span class="bc-link" onclick="goTo('pg-mindmap-home')">Mind Map</span><span class="bc-sep">›</span><span class="bc-current">News</span></div>
+  <div class="pg-eyebrow" style="color:var(--blue)">✦ Campus Updates</div>
+  <h2 class="pg-title">University News</h2>
+  <p class="pg-sub">Events, announcements, academic updates — everything happening at Webster University.</p>
+  <div class="news-filters">
+    <button class="nf-btn on" onclick="filterNews(this,'all')">All</button>
+    <button class="nf-btn" onclick="filterNews(this,'event')">Events</button>
+    <button class="nf-btn" onclick="filterNews(this,'club')">Clubs</button>
+    <button class="nf-btn" onclick="filterNews(this,'academic')">Academic</button>
+    <button class="nf-btn" onclick="filterNews(this,'announce')">Announcements</button>
+  </div>
+  <div class="news-list" id="newsList"></div>
+</div>
+
+<!-- ══════════ QUIZ MODAL ══════════ -->
+<div class="modal-ov" id="quizModal">
+  <div class="quiz-box">
+    <div class="qbox-head">
+      <div class="q-chap-tag" id="qChapTag"></div>
+      <div class="q-book-title" id="qBookTitle"></div>
+      <div class="qprog-bar"><div class="qprog-fill" id="qProgFill" style="width:0%"></div></div>
+    </div>
+    <div class="qbox-body" id="quizBody"></div>
+    <div class="qbox-footer">
+      <div class="q-score-lbl" id="qScoreLbl"></div>
+      <button class="btn-qnext" id="btnQNext" onclick="nextQ()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PROFILE MODAL ══════════ -->
+<div class="modal-ov" id="profileModal">
+  <div class="profile-box" id="profileBoxContent"></div>
+</div>
+
+<!-- ══════════ ASK ALL MODAL ══════════ -->
+<div class="modal-ov" id="askAllModal">
+  <div class="quiz-box" style="max-width:500px">
+    <button class="mclose" onclick="closeModal('askAllModal')">✕</button>
+    <div style="padding:32px 34px">
+      <div style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:6px">Ask All A+ Students</div>
+      <p style="font-size:.84rem;color:var(--muted);line-height:1.7;margin-bottom:20px">Your question goes to all students with GPA 3.0+. They can reply on Telegram.</p>
+      <div class="ask-form-lbl">Your Question</div>
+      <textarea class="ask-ta" id="askAllTa" placeholder="e.g. What's the best way to prepare for finals?" style="min-height:110px;margin-bottom:12px"></textarea>
+      <button class="btn-send" onclick="sendAskAll()">📨 Send to All A+ Students</button>
+      <div class="send-ok" id="askAllOk">✅ Sent! Watch your Telegram for replies from A+ students.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="lockToast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const SUBJECTS = [
+  {id:'eco', ico:'📊', name:'Economics', desc:'Supply, demand, trade and economic theory.', color:'rgba(124,106,247,.15)', tele:'https://t.me/wuteconomics'},
+  {id:'ir',  ico:'🌍', name:'International Relations', desc:'Diplomacy, geopolitics and international law.', color:'rgba(96,184,245,.15)', tele:'https://t.me/wutir'},
+  {id:'cs',  ico:'💻', name:'Computer Science', desc:'Algorithms, data structures and programming.', color:'rgba(45,212,160,.15)', tele:'https://t.me/wutcs'},
+  {id:'ba',  ico:'📈', name:'Business Administration', desc:'Management, strategy, marketing and finance.', color:'rgba(232,184,75,.12)', tele:'https://t.me/wutba'},
+  {id:'psy', ico:'🧠', name:'Psychology', desc:'Behaviour, cognition and mental health.', color:'rgba(245,101,101,.12)', tele:'https://t.me/wutpsy'},
+  {id:'ml',  ico:'📡', name:'Media Literacy', desc:'Digital media, journalism and communication.', color:'rgba(247,160,79,.12)', tele:'https://t.me/wutml'},
+];
+
+const BOOKS = {
+  eco:[
+    {lvl:'b', ico:'📗', title:'Survey of Economics', author:"O'Sullivan & Sheffrin", chapters:12},
+    {lvl:'i', ico:'📘', title:'Microeconomics', author:'Robert S. Pindyck', chapters:14},
+    {lvl:'a', ico:'📕', title:'Macroeconomics', author:'N. Gregory Mankiw', chapters:16},
+  ],
+  ir:[
+    {lvl:'b', ico:'📗', title:'Introduction to International Relations', author:'Baylis & Smith', chapters:10},
+    {lvl:'i', ico:'📘', title:'International Politics', author:'Charles W. Kegley', chapters:13},
+    {lvl:'a', ico:'📕', title:'The Clash of Civilizations', author:'Samuel P. Huntington', chapters:12},
+  ],
+  cs:[
+    {lvl:'b', ico:'📗', title:"CS50: Harvard's Intro to CS", author:'David J. Malan', chapters:11},
+    {lvl:'i', ico:'📘', title:'Data Structures & Algorithms', author:'Cormen et al.', chapters:15},
+    {lvl:'a', ico:'📕', title:'Artificial Intelligence', author:'Russell & Norvig', chapters:18},
+  ],
+  ba:[
+    {lvl:'b', ico:'📗', title:'Business Essentials', author:'Ebert & Griffin', chapters:12},
+    {lvl:'i', ico:'📘', title:'Strategic Management', author:'Fred R. David', chapters:14},
+    {lvl:'a', ico:'📕', title:'Competitive Strategy', author:'Michael E. Porter', chapters:16},
+  ],
+  psy:[
+    {lvl:'b', ico:'📗', title:'Psychology: An Introduction', author:'Benjamin Lahey', chapters:10},
+    {lvl:'i', ico:'📘', title:'Cognitive Psychology', author:'Robert J. Sternberg', chapters:13},
+    {lvl:'a', ico:'📕', title:'Social Psychology', author:'David Myers', chapters:15},
+  ],
+  ml:[
+    {lvl:'b', ico:'📗', title:'Media Literacy for Citizens', author:'Potter & Sharp', chapters:9},
+    {lvl:'i', ico:'📘', title:'Digital Journalism', author:'Jonathan Hewett', chapters:11},
+    {lvl:'a', ico:'📕', title:'Media Effects Theory', author:'Jennings Bryant', chapters:14},
+  ],
+};
+
+const CHAP_TOPICS = {
+  eco: {
+    b:['The Economic Way of Thinking','Supply and Demand','Market Equilibrium','Consumer Choice & Utility','Production and Costs','Perfect Competition','Monopoly','Oligopoly & Game Theory','Labor Markets','Income Distribution','International Trade Basics','GDP & The Macroeconomy'],
+    i:['Demand, Supply & Market Equilibrium','Consumer Behavior','Uncertainty & Consumer Behavior','Firm Production','Cost of Production','Competitive Markets','Market Power: Monopoly','Monopolistic Competition','Oligopoly','Game Theory & Strategy','Pricing with Market Power','General Equilibrium','Externalities & Public Goods','Information Markets'],
+    a:['Ten Principles of Economics','Thinking Like an Economist','Interdependence and Trade','Supply & Demand Forces','Elasticity','Supply, Demand & Policy','Consumers, Producers, Efficiency','The Costs of Taxation','International Trade','Externalities','Public Goods & Common Resources','Design of Tax System','Firm Costs & Competitive Supply','Competitive Markets (Long Run)','Monopoly','Monopolistic Competition & Oligopoly'],
+  },
+};
+
+function getTopics(subjId, lvl, count) {
+  const t = CHAP_TOPICS[subjId]?.[lvl];
+  if(t) return t.slice(0,count);
+  const generic = ['Introduction & Foundations','Core Concepts','Theoretical Frameworks','Historical Context','Key Actors','Research Methods','Case Study','Comparative Analysis','Contemporary Issues','Policy Implications','Advanced Topics','Critical Perspectives','Special Topics','Future Directions','Synthesis & Review','Final Review'];
+  return generic.slice(0,count);
+}
+
+const QUIZ_POOL = {
+  b:[
+    {q:'What does economics primarily study?',opts:['Political history','How people allocate scarce resources','Astronomy','Military strategy'],ans:1},
+    {q:"The law of demand states that as price increases:",opts:['Demand increases','Supply falls','Quantity demanded falls','Quality improves'],ans:2},
+    {q:'What is an "opportunity cost"?',opts:['A tax penalty','The value of the next-best alternative forgone','Cost of raw materials','A sunk cost'],ans:1},
+    {q:'When supply increases and demand stays the same, price typically:',opts:['Rises','Falls','Stays the same','Doubles'],ans:1},
+    {q:'Which of these is a factor of production?',opts:['Money in a wallet','A government bond','Labour','A bank loan'],ans:2},
+  ],
+  i:[
+    {q:'Price elasticity of demand measures:',opts:['The change in supply','How sensitive quantity demanded is to price changes','Government price controls','Production costs'],ans:1},
+    {q:'Marginal cost equals:',opts:['Total cost / output','Change in total cost from one extra unit','Fixed cost per unit','Average variable cost'],ans:1},
+    {q:'A perfectly competitive firm is a:',opts:['Price setter','Price taker','Monopolist','Oligopolist'],ans:1},
+    {q:'Consumer surplus is defined as:',opts:['The profit firms earn','The difference between willingness-to-pay and actual price','Government tax revenue','A type of subsidy'],ans:1},
+    {q:'In the long run in perfect competition, economic profit equals:',opts:['Maximum possible','Zero','Negative','The interest rate'],ans:1},
+  ],
+  a:[
+    {q:'The IS-LM model simultaneously represents equilibrium in:',opts:['Labor and goods markets','Goods and money markets','International and domestic markets','Financial and labor markets'],ans:1},
+    {q:'Quantitative easing involves a central bank:',opts:['Raising interest rates','Buying securities to increase money supply','Cutting government spending','Imposing tariffs'],ans:1},
+    {q:'Ricardian equivalence argues that government borrowing:',opts:['Always stimulates the economy','Has no effect if consumers are forward-looking','Reduces unemployment permanently','Increases the trade deficit'],ans:1},
+    {q:'The "impossible trinity" says you cannot simultaneously have:',opts:['Low inflation, low unemployment, growth','Fixed exchange rate, free capital, independent monetary policy','Free trade, open borders, tariffs','Budget balance, trade balance, full employment'],ans:1},
+    {q:'Stagflation refers to:',opts:['High growth and low unemployment','High inflation combined with high unemployment','Deflation during a boom','A currency appreciation crisis'],ans:1},
+  ],
+};
+
+function getQuiz(lvl) {
+  const pool = QUIZ_POOL[lvl] || QUIZ_POOL.b;
+  return [...pool].sort(()=>Math.random()-.5).slice(0,5);
+}
+
+const STUDENTS = [
+  {id:1,fn:'Gulnora',ln:'Karimova',major:'Economics',gpa:3.9,tele:'@guli1283',av:'GK',avCol:'linear-gradient(135deg,#e8b84b,#f0c55a)',yr:'3rd Year',courses:'Microeconomics, Macroeconomics, Econometrics'},
+  {id:2,fn:'Jasur',ln:'Toshmatov',major:'Computer Science',gpa:3.7,tele:'@jasur_cs',av:'JT',avCol:'linear-gradient(135deg,#2dd4a0,#1ab88a)',yr:'2nd Year',courses:'Algorithms, Machine Learning, Web Dev'},
+  {id:3,fn:'Malika',ln:'Yusupova',major:'Psychology',gpa:3.8,tele:'@malika_psy',av:'MY',avCol:'linear-gradient(135deg,#60b8f5,#3a9de0)',yr:'4th Year',courses:'Cognitive Psych, Research Methods, Neuroscience'},
+  {id:4,fn:'Bobur',ln:'Rakhimov',major:'Business Administration',gpa:3.5,tele:'@bobur_ba',av:'BR',avCol:'linear-gradient(135deg,#f56565,#e04040)',yr:'3rd Year',courses:'Strategic Management, Marketing, Finance'},
+  {id:5,fn:'Nilufar',ln:'Hasanova',major:'International Relations',gpa:4.0,tele:'@nilu_ir',av:'NH',avCol:'linear-gradient(135deg,#9b87f5,#7c6af7)',yr:'2nd Year',courses:'Diplomacy, International Law, Geopolitics'},
+  {id:6,fn:'Sardor',ln:'Mirzayev',major:'Media Literacy',gpa:3.3,tele:'@sardor_media',av:'SM',avCol:'linear-gradient(135deg,#f7a04f,#e8751a)',yr:'1st Year',courses:'Digital Journalism, Media Ethics, Communication'},
+  {id:7,fn:'Zulfiya',ln:'Nazarova',major:'Economics',gpa:3.6,tele:'@zulfi_eco',av:'ZN',avCol:'linear-gradient(135deg,#4fc78a,#2d9e6a)',yr:'4th Year',courses:'Intl Trade, Econometrics, Development Economics'},
+  {id:8,fn:'Amir',ln:'Kholmatov',major:'Computer Science',gpa:3.9,tele:'@amir_dev',av:'AK',avCol:'linear-gradient(135deg,#2aa3e0,#1678b3)',yr:'3rd Year',courses:'AI, Cloud Computing, Software Engineering'},
+];
+
+const CLUBS = [
+  {id:'zakovat',ico:'🧩',name:'Zakovat Club',tagline:'Intellectual quiz and knowledge competitions',tele:'https://t.me/zakovatclub_atwut',
+   schedule:'Every Thursday, 5:00 PM',location:'Room 204, Main Building',members:'42 members',
+   desc:'Weekly knowledge tournaments, inter-university competitions and training sessions. All levels welcome!',
+   coord:{name:'Aziz Umarov',role:'Club Coordinator',av:'AU',avCol:'linear-gradient(135deg,#e8b84b,#f0c55a)',tele:'https://t.me/aziz_zakovat',tele_handle:'@aziz_zakovat'}},
+  {id:'art',ico:'🎨',name:'Art Club',tagline:'Painting, drawing, digital art and creativity',tele:'https://t.me/artclub_atwut',
+   schedule:'Tuesdays & Fridays, 4:00 PM',location:'Art Studio, 3rd Floor',members:'35 members',
+   desc:'Weekly workshops, exhibitions and collaborative projects. All skill levels welcome.',
+   coord:{name:'Kamola Ergasheva',role:'Art Director',av:'KE',avCol:'linear-gradient(135deg,#f56565,#e04040)',tele:'https://t.me/kamola_art',tele_handle:'@kamola_art'}},
+  {id:'chinese',ico:'🀄',name:'Chinese Club',tagline:'Mandarin language, culture and exchange',tele:'https://t.me/chineseclub_atwut',
+   schedule:'Mon & Wed, 6:00 PM',location:'Language Lab, Room 112',members:'28 members',
+   desc:'Learn Mandarin, explore Chinese culture, celebrate traditional festivals and connect with exchange students.',
+   coord:{name:'Li Wei',role:'Language Coordinator',av:'LW',avCol:'linear-gradient(135deg,#f76464,#c9325a)',tele:'https://t.me/liwei_wut',tele_handle:'@liwei_wut'}},
+  {id:'tennis',ico:'🎾',name:'Tennis Club',tagline:'Training, tournaments and team spirit',tele:'https://t.me/tennisclub_atwut',
+   schedule:'Mon / Wed / Fri — 7 AM & 5 PM',location:'Campus Tennis Courts',members:'31 members',
+   desc:'Daily training sessions, inter-university tournaments and social matches for all levels.',
+   coord:{name:'Rustam Nazarov',role:'Head Coach',av:'RN',avCol:'linear-gradient(135deg,#2dd4a0,#1ab88a)',tele:'https://t.me/rustam_tennis',tele_handle:'@rustam_tennis'}},
+];
+
+const NEWS_DATA = [
+  {cat:'event',catLbl:'EVENT',title:'Zakovat Club Inner Competition — This Wednesday at 2 PM',body:'This upcoming Wednesday at 2:00 PM, Zakovat Club hosts its monthly inner competition in Room 204. All members are expected to attend. Prizes for top 3 finishers! Good luck to everyone participating.',org:'Zakovat Club',date:'Dec 4, 2025'},
+  {cat:'announce',catLbl:'ANNOUNCEMENT',title:'Winter Semester Registration Opens December 9',body:'Registration for winter semester opens Monday, December 9 at 9:00 AM via the student portal. Popular courses fill up fast — log in early. Contact your academic advisor for guidance.',org:'Academic Office',date:'Dec 3, 2025'},
+  {cat:'club',catLbl:'CLUB',title:'Art Club End-of-Semester Exhibition — This Friday at 4 PM',body:'The Art Club invites the entire university community to "Campus Through Our Eyes" — an end-of-semester student exhibition this Friday at 4 PM in the Main Hall. Over 60 artworks on display.',org:'Art Club',date:'Dec 3, 2025'},
+  {cat:'academic',catLbl:'ACADEMIC',title:'Guest Lecture: Dr. Alisher Umarov — Digital Economy, Dec 6',body:'Professor Alisher Umarov from TSEU will deliver a special lecture on "The Future of Digital Economy in Central Asia" on December 6 at 11 AM, Auditorium A. Open to all students.',org:'Economics Department',date:'Dec 2, 2025'},
+  {cat:'event',catLbl:'EVENT',title:'Chinese New Year Celebration — January 29',body:'Chinese Club is organising a campus-wide celebration on January 29. Cultural performances, traditional food, Mandarin calligraphy workshops and red envelope ceremony. Open to everyone!',org:'Chinese Club',date:'Dec 1, 2025'},
+  {cat:'club',catLbl:'CLUB',title:'Tennis Club Recruiting for Spring Season',body:'Want to learn tennis or level up? Tennis Club is accepting new members for spring. No experience needed. Free trial session this Saturday at 10 AM at the campus courts.',org:'Tennis Club',date:'Nov 30, 2025'},
+  {cat:'academic',catLbl:'ACADEMIC',title:'Final Exam Schedule Now Published',body:'The final exam schedule for the current semester is live on the university portal. Exams start December 20. Review your timetable and report any conflicts to the Registrar immediately.',org:'Registrar Office',date:'Nov 29, 2025'},
+  {cat:'announce',catLbl:'ANNOUNCEMENT',title:'Library Extended Hours During Exam Period',body:'From December 15, the library will be open 7 AM – 11 PM daily to support students during exams. Study rooms available first-come, first-served.',org:'University Library',date:'Nov 28, 2025'},
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let chapProgress = {}; // key = "subjId-bookIdx-chapIdx" => score 0-100
+let currentSubjId = null, currentBookIdx = null;
+let quizState = {qs:[], cur:0, score:0, answered:false, subjId:'', bookIdx:0, chapIdx:0, lvl:''};
+let pageHistory = ['pg-mindmap-home'];
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function goTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  if(pageId !== pageHistory[pageHistory.length-1]) pageHistory.push(pageId);
+  document.getElementById('navBack').style.display = pageId === 'pg-mindmap-home' ? 'none' : 'flex';
+  window.scrollTo(0,0);
+}
+function handleBack() {
+  pageHistory.pop();
+  const prev = pageHistory[pageHistory.length-1] || 'pg-mindmap-home';
+  pageHistory.pop(); // will be re-added by goTo
+  goTo(prev);
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.onload = function() {
+  renderSubjects();
+  renderStudents();
+  renderClubs();
+  renderNews('all');
+};
+
+// ═══════════════════════════════════════
+// SUBJECTS
+// ═══════════════════════════════════════
+function renderSubjects() {
+  document.getElementById('subjectsGrid').innerHTML = SUBJECTS.map(s => `
+    <div class="subj-card" onclick="openSubject('${s.id}')" style="--sc:${s.color}">
+      <span class="subj-ico">${s.ico}</span>
+      <div class="subj-name">${s.name}</div>
+      <div class="subj-desc">${s.desc}</div>
+      <div class="subj-arr">→</div>
+    </div>`).join('');
+}
+
+function openSubject(id) {
+  currentSubjId = id;
+  const s = SUBJECTS.find(x => x.id === id);
+  const books = BOOKS[id] || [];
+  const lvlMap = {b:'Beginner',i:'Intermediate',a:'Advanced'};
+  const lvlClass = {b:'lvl-b',i:'lvl-i',a:'lvl-a'};
+
+  // Breadcrumb
+  document.getElementById('subjDetailBc').innerHTML = `
+    <span class="bc-link" onclick="goTo('pg-mindmap-home')">Mind Map</span>
+    <span class="bc-sep">›</span>
+    <span class="bc-link" onclick="goTo('pg-subjects')">Subjects</span>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">${s.name}</span>`;
+
+  // Compute progress per book
+  function bookPct(bi) {
+    const total = books[bi].chapters, key = (c) => `${id}-${bi}-${c}`;
+    let done = 0;
+    for(let c=0;c<total;c++) if((chapProgress[key(c)]||0)>=80) done++;
+    return Math.round(done/total*100);
+  }
+
+  document.getElementById('subjDetailContent').innerHTML = `
+    <div class="subj-detail-header">
+      <div style="font-size:3.8rem">${s.ico}</div>
+      <div>
+        <div class="sdh-title">${s.name}</div>
+        <div class="sdh-meta">${books.length} books · Self-paced · Progress tracked per chapter</div>
+        <a href="${s.tele}" target="_blank" class="tele-btn">
+          <svg class="tele-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+          Join ${s.name} Community on Telegram
+        </a>
+      </div>
+    </div>
+    <div class="books-lbl">✦ Books & Learning Paths</div>
+    <div class="books-grid">
+      ${books.map((b,bi) => {
+        const pct = bookPct(bi);
+        return `<div class="book-card ${lvlClass[b.lvl]}" onclick="openBook('${id}',${bi})">
+          <span class="book-ico">${b.ico}</span>
+          <span class="book-badge">${lvlMap[b.lvl]}</span>
+          <div class="book-title">${b.title}</div>
+          <div class="book-author">${b.author}</div>
+          <div class="book-chap-count">${b.chapters} chapters</div>
+          <div class="book-prog-bar"><div class="book-prog-fill" style="width:${pct}%"></div></div>
+          <div class="book-pct">${pct}% complete</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  goTo('pg-subject-detail');
+}
+
+function openBook(subjId, bookIdx) {
+  currentSubjId = subjId; currentBookIdx = bookIdx;
+  const s = SUBJECTS.find(x=>x.id===subjId);
+  const b = BOOKS[subjId][bookIdx];
+  const lvlMap = {b:'Beginner',i:'Intermediate',a:'Advanced'};
+  const lvlNames = {b:'Beginner',i:'Intermediate',a:'Advanced'};
+  const topics = getTopics(subjId, b.lvl, b.chapters);
+  const colMap = {b:['var(--green)','#14532d'],i:['var(--gold)','#451a03'],a:['var(--rose)','#450a0a']};
+  const [ringCol] = colMap[b.lvl];
+
+  // Breadcrumb
+  document.getElementById('chapsBc').innerHTML = `
+    <span class="bc-link" onclick="goTo('pg-mindmap-home')">Mind Map</span><span class="bc-sep">›</span>
+    <span class="bc-link" onclick="goTo('pg-subjects')">Subjects</span><span class="bc-sep">›</span>
+    <span class="bc-link" onclick="openSubject('${subjId}')">${s.name}</span><span class="bc-sep">›</span>
+    <span class="bc-current">${b.title}</span>`;
+
+  const chapsHTML = topics.map((topic, i) => {
+    const key = `${subjId}-${bookIdx}-${i}`;
+    const prevKey = `${subjId}-${bookIdx}-${i-1}`;
+    const score = chapProgress[key] || 0;
+    const locked = i > 0 && (chapProgress[prevKey]||0) < 80;
+    const passed = score >= 80;
+    const started = score > 0;
+
+    // Ring
+    const C = 100.53, offset = C - (C * score / 100);
+    const ringHTML = started ? `
+      <div class="chap-ring-wrap">
+        <svg class="ring-svg" width="42" height="42" viewBox="0 0 36 36">
+          <circle class="r-bg" cx="18" cy="18" r="16"/>
+          <circle class="r-fill" cx="18" cy="18" r="16" stroke="${passed?'var(--green)':'var(--rose)'}" stroke-dasharray="${C}" stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="ring-label" style="color:${passed?'var(--green)':'var(--rose)'}">${score}%</div>
+      </div>` :
+      `<div class="chap-ring-wrap">
+        <svg class="ring-svg" width="42" height="42" viewBox="0 0 36 36"><circle class="r-bg" cx="18" cy="18" r="16"/></svg>
+        <div class="ring-label" style="color:var(--muted)">—</div>
+      </div>`;
+
+    const hint = passed ? '✅ Complete — unlocked next' : locked ? '🔒 Locked — complete previous chapter first' : '📖 Ready to start';
+    const action = locked ? `showToast('Complete Chapter ${i} with 80%+ to unlock this')` : `startQuiz('${subjId}',${bookIdx},${i},'${b.lvl}')`;
+
+    return `<div class="chap-row${locked?' chap-locked':''}" onclick="${action}">
+      <div class="chap-num">CH ${String(i+1).padStart(2,'0')}</div>
+      <div class="chap-info">
+        <div class="chap-name">${topic}</div>
+        <div class="chap-hint">${hint}</div>
+      </div>
+      ${locked ? '<span class="lock-icon">🔒</span>' : ringHTML}
+    </div>`;
+  }).join('');
+
+  document.getElementById('chapsContent').innerHTML = `
+    <div class="chap-book-header">
+      <div class="cbh-ico">${b.ico}</div>
+      <div>
+        <div class="cbh-title">${b.title}</div>
+        <div class="cbh-sub">${b.author} · ${b.chapters} Chapters · ${lvlNames[b.lvl]} Level</div>
+      </div>
+    </div>
+    <div class="chapters-list">${chapsHTML}</div>`;
+
+  goTo('pg-chapters');
+}
+
+// ═══════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════
+function startQuiz(subjId, bookIdx, chapIdx, lvl) {
+  const book = BOOKS[subjId][bookIdx];
+  const topics = getTopics(subjId, lvl, book.chapters);
+  quizState = {qs:getQuiz(lvl), cur:0, score:0, answered:false, subjId, bookIdx, chapIdx, lvl, chapTitle:topics[chapIdx]};
+  document.getElementById('qChapTag').textContent = `Chapter ${chapIdx+1} · ${book.title}`;
+  renderQuestion();
+  document.getElementById('quizModal').classList.add('open');
+}
+function closeQuiz() { document.getElementById('quizModal').classList.remove('open'); }
+
+function renderQuestion() {
+  const {qs, cur} = quizState;
+  if(cur >= qs.length) { showResult(); return; }
+  const q = qs[cur];
+  document.getElementById('qBookTitle').textContent = quizState.chapTitle + ' — Chapter Test';
+  document.getElementById('qProgFill').style.width = (cur/qs.length*100)+'%';
+  document.getElementById('qScoreLbl').textContent = `Score: ${quizState.score}/${cur}`;
+  document.getElementById('btnQNext').classList.remove('show');
+  quizState.answered = false;
+  document.getElementById('quizBody').innerHTML = `
+    <div class="q-count">Question ${cur+1} of ${qs.length}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="options-list">${q.opts.map((o,i)=>
+      `<button class="opt-btn" onclick="pickAnswer(this,${i},${q.ans})">${o}</button>`).join('')}
+    </div>`;
+}
+
+function pickAnswer(btn, idx, correct) {
+  if(quizState.answered) return;
+  quizState.answered = true;
+  document.querySelectorAll('.opt-btn').forEach(b => b.style.cursor='not-allowed');
+  document.querySelectorAll('.opt-btn')[correct].classList.add('o-right');
+  if(idx === correct) { btn.classList.add('o-right'); quizState.score++; }
+  else btn.classList.add('o-wrong');
+  document.getElementById('qScoreLbl').textContent = `Score: ${quizState.score}/${quizState.cur+1}`;
+  const nb = document.getElementById('btnQNext');
+  nb.classList.add('show');
+  nb.textContent = quizState.cur+1 >= quizState.qs.length ? 'See Results →' : 'Next Question →';
+}
+
+function nextQ() { quizState.cur++; renderQuestion(); }
+
+function showResult() {
+  const {score, qs, chapIdx, bookIdx, subjId} = quizState;
+  const pct = Math.round(score/qs.length*100);
+  const passed = pct >= 80;
+  const key = `${subjId}-${bookIdx}-${chapIdx}`;
+  if(pct > (chapProgress[key]||0)) chapProgress[key] = pct;
+
+  document.getElementById('qProgFill').style.width = '100%';
+  document.getElementById('qChapTag').textContent = 'Quiz Complete!';
+  document.getElementById('qBookTitle').textContent = '';
+  document.getElementById('btnQNext').classList.remove('show');
+  document.getElementById('qScoreLbl').textContent = '';
+  document.getElementById('quizBody').innerHTML = `
+    <div class="quiz-result-wrap">
+      <span class="qr-emoji">${passed?'🎉':'😅'}</span>
+      <div class="qr-score ${passed?'qr-pass':'qr-fail'}">${pct}%</div>
+      <div class="qr-msg">${passed
+        ? `<strong style="color:#fff">Chapter ${chapIdx+1} Complete! 🎓</strong><br>You scored ${pct}% — you've unlocked the next chapter!`
+        : `You scored <strong style="color:var(--rose)">${pct}%</strong>.<br>You need <strong>80% or higher</strong> to unlock Chapter ${chapIdx+2}.<br><br>Review the material and try again — you can do it! 💪`
+      }</div>
+      <div class="qr-btns">
+        ${passed ? `<button class="btn-qr-primary" onclick="closeQuiz();openBook('${subjId}',${bookIdx})">View Progress →</button>` : ''}
+        <button class="btn-qr-${passed?'secondary':'primary'}" onclick="retryQuiz()">Try Again</button>
+      </div>
+    </div>`;
+}
+
+function retryQuiz() {
+  const {subjId, bookIdx, chapIdx, lvl} = quizState;
+  closeQuiz();
+  setTimeout(() => startQuiz(subjId, bookIdx, chapIdx, lvl), 200);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('lockToast');
+  t.textContent = '🔒 ' + msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display='none', 3000);
+}
+
+// ═══════════════════════════════════════
+// A+ STUDENTS
+// ═══════════════════════════════════════
+function renderStudents() {
+  document.getElementById('studentsGrid').innerHTML = STUDENTS.map(s => `
+    <div class="stu-card">
+      <div class="stu-av" style="background:${s.avCol}">${s.av}</div>
+      <div class="stu-name">${s.fn} ${s.ln}</div>
+      <div class="stu-major">${s.major} · ${s.yr}</div>
+      <div class="stu-gpa">⭐ GPA ${s.gpa.toFixed(1)}</div>
+      <div class="stu-tele">${s.tele}</div>
+      <div class="stu-btns">
+        <button class="btn-ask-stu" onclick="openProfile(${s.id})">💬 Ask</button>
+        <button class="btn-view-profile" onclick="openProfile(${s.id})">Profile</button>
+      </div>
+    </div>`).join('');
+}
+
+function openProfile(id) {
+  const s = STUDENTS.find(x=>x.id===id);
+  document.getElementById('profileBoxContent').innerHTML = `
+    <button class="mclose" onclick="closeModal('profileModal')">✕</button>
+    <div class="profile-banner" style="background:${s.avCol}">
+      <div class="profile-av-big" style="background:${s.avCol}">${s.av}</div>
+    </div>
+    <div class="profile-body">
+      <div class="profile-name">${s.fn} ${s.ln}</div>
+      <div class="profile-major">${s.major} · ${s.yr}</div>
+      <div class="profile-stats-row">
+        <div class="pstat-box"><div class="pstat-val">${s.gpa.toFixed(1)}</div><div class="pstat-lbl">GPA</div></div>
+        <div class="pstat-box"><div class="pstat-val" style="font-size:.85rem;color:var(--blue)">${s.tele}</div><div class="pstat-lbl">TELEGRAM</div></div>
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);line-height:1.65;margin-bottom:16px"><b style="color:var(--text)">Courses:</b> ${s.courses}</div>
+      <div class="ask-form-inner">
+        <div class="ask-form-lbl">Send a Question to ${s.fn}</div>
+        <textarea class="ask-ta" id="askTa_${id}" placeholder="Ask ${s.fn} anything about academics..."></textarea>
+        <button class="btn-send" onclick="sendAsk(${id})">📨 Send via Telegram</button>
+        <div class="send-ok" id="sendOk_${id}">✅ Sent! ${s.fn} will reply on Telegram ${s.tele}</div>
+      </div>
+    </div>`;
+  document.getElementById('profileModal').classList.add('open');
+}
+
+function sendAsk(id) {
+  const ta = document.getElementById(`askTa_${id}`);
+  if(!ta.value.trim()) return;
+  document.getElementById(`sendOk_${id}`).style.display='block';
+  ta.value='';
+}
+function openAskAll() { document.getElementById('askAllModal').classList.add('open'); }
+function sendAskAll() {
+  const ta = document.getElementById('askAllTa');
+  if(!ta.value.trim()) return;
+  document.getElementById('askAllOk').style.display='block';
+  ta.value='';
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════
+// CLUBS
+// ═══════════════════════════════════════
+function renderClubs() {
+  document.getElementById('clubsGrid').innerHTML = CLUBS.map(c => `
+    <div class="club-card" onclick="openClub('${c.id}')">
+      <span class="club-ico">${c.ico}</span>
+      <div class="club-name">${c.name}</div>
+      <div class="club-tagline">${c.tagline}</div>
+    </div>`).join('');
+}
+
+function openClub(id) {
+  const c = CLUBS.find(x=>x.id===id);
+  document.getElementById('clubsListView').style.display='none';
+  const dv = document.getElementById('clubDetailView');
+  dv.style.display='block';
+  dv.innerHTML = `
+    <button class="btn-back" onclick="document.getElementById('clubsListView').style.display='block';document.getElementById('clubDetailView').style.display='none'">← All Clubs</button>
+    <div class="club-detail-wrap">
+      <div class="club-dhead">
+        <div class="cdh-ico">${c.ico}</div>
+        <div>
+          <div class="cdh-name">${c.name}</div>
+          <div class="cdh-desc">${c.desc}</div>
+          <a href="${c.tele}" target="_blank" class="tele-btn">
+            <svg class="tele-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+            Join ${c.name} on Telegram
+          </a>
+        </div>
+      </div>
+      <div class="club-info-grid">
+        <div class="cig-card"><span class="cig-ico">🗓️</span><div class="cig-lbl">Schedule</div><div class="cig-val">${c.schedule}</div></div>
+        <div class="cig-card"><span class="cig-ico">📍</span><div class="cig-lbl">Location</div><div class="cig-val">${c.location}</div></div>
+        <div class="cig-card"><span class="cig-ico">👥</span><div class="cig-lbl">Members</div><div class="cig-val">${c.members}</div></div>
+        <div class="cig-card"><span class="cig-ico">🔗</span><div class="cig-lbl">Telegram</div><div class="cig-val" style="color:var(--blue);font-size:.78rem">${c.tele}</div></div>
+      </div>
+      <div class="coord-section">
+        <div class="coord-lbl">✦ Club Coordinator — Contact for info & schedule</div>
+        <div class="coord-row">
+          <div class="coord-av" style="background:${c.coord.avCol}">${c.coord.av}</div>
+          <div>
+            <div class="coord-name">${c.coord.name}</div>
+            <div class="coord-role">${c.coord.role}</div>
+            <a href="${c.coord.tele}" target="_blank" class="coord-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+              Message ${c.coord.tele_handle}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════
+// NEWS
+// ═══════════════════════════════════════
+function renderNews(filter) {
+  const list = filter==='all' ? NEWS_DATA : NEWS_DATA.filter(n=>n.cat===filter);
+  const cc = {event:'nc-event',club:'nc-club',academic:'nc-academic',announce:'nc-announce'};
+  document.getElementById('newsList').innerHTML = list.map(n=>`
+    <div class="news-card">
+      <div class="nc-top"><span class="nc-cat ${cc[n.cat]}">${n.catLbl}</span><span class="nc-date">${n.date}</span></div>
+      <div class="nc-title">${n.title}</div>
+      <div class="nc-body">${n.body}</div>
+      <div class="nc-footer"><span class="nc-org">${n.org}</span><span class="nc-sep"></span><span class="nc-org">Webster University</span></div>
+    </div>`).join('');
+}
+function filterNews(btn, cat) {
+  document.querySelectorAll('.nf-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderNews(cat);
+}
+
+// Close modals on backdrop click
+['quizModal','profileModal','askAllModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
+</script>
+</body>
+</html>
