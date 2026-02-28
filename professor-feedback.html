@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Professor Feedback Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0814; font-family: 'DM Sans', sans-serif; color: #f0ece6; min-height: 100vh; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(245,166,35,0.3); border-radius: 2px; }
+  input, textarea { outline: none; font-family: 'DM Sans', sans-serif; }
+  input::placeholder, textarea::placeholder { color: #5a5670; }
+
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .prof-grid .prof-card:nth-child(1){animation-delay:0.05s}
+  .prof-grid .prof-card:nth-child(2){animation-delay:0.1s}
+  .prof-grid .prof-card:nth-child(3){animation-delay:0.15s}
+  .prof-grid .prof-card:nth-child(4){animation-delay:0.2s}
+  .prof-grid .prof-card:nth-child(5){animation-delay:0.25s}
+  .prof-grid .prof-card:nth-child(6){animation-delay:0.3s}
+
+  /* Hero Header */
+  .hero-header {
+    background: linear-gradient(135deg, #12101e 0%, #1a1230 100%);
+    border-bottom: 1px solid rgba(245,166,35,0.15);
+    padding: 48px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-orb {
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,166,35,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-inner { max-width: 1100px; margin: 0 auto; }
+  .hero-badge {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+  }
+  .hero-badge-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #F5A623, #e8902a);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .hero-badge-text {
+    font-size: 12px; color: #9a96b4;
+    letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600;
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 900;
+    color: #f0ece6;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .hero-title .accent { color: #F5A623; }
+  .hero-desc {
+    color: #9a96b4; font-size: 15px;
+    max-width: 460px; line-height: 1.7;
+  }
+  .search-wrap {
+    margin-top: 28px; display: flex; gap: 12px; max-width: 580px;
+  }
+  .search-input-wrap { flex: 1; position: relative; }
+  .search-icon {
+    position: absolute; left: 16px; top: 50%;
+    transform: translateY(-50%); font-size: 16px; opacity: 0.5;
+  }
+  .search-input {
+    width: 100%; padding: 14px 16px 14px 44px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px; color: #f0ece6; font-size: 14px;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: rgba(245,166,35,0.5); }
+
+  /* Main content */
+  .main-content { max-width: 1100px; margin: 0 auto; padding: 40px; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 20px; margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .stat-card {
+    flex: 1 1 120px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 16px 20px;
+  }
+  .stat-icon { font-size: 20px; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 800; color: #F5A623; font-family: monospace; }
+  .stat-label { font-size: 11px; color: #9a96b4; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Professor grid */
+  .prof-section { margin-bottom: 40px; }
+  .prof-section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; color: #f0ece6; margin-bottom: 20px;
+  }
+  .prof-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .prof-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 20px; cursor: pointer;
+    transition: all 0.2s;
+    animation: fadeIn 0.4s ease both;
+  }
+  .prof-card:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(245,166,35,0.4);
+    transform: translateY(-2px);
+  }
+  .prof-card-top {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 12px;
+  }
+  .prof-avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px;
+  }
+  .prof-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; color: #f0ece6; font-weight: 600;
+  }
+  .prof-dept {
+    font-size: 11px; color: #9a96b4; margin-top: 2px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .prof-rating-num {
+    font-size: 22px; font-weight: 800; color: #F5A623; font-family: monospace;
+  }
+  .stars { display: flex; gap: 2px; }
+  .star { font-size: 12px; color: #3a3a5c; }
+  .star.filled { color: #F5A623; }
+  .prof-courses {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .course-tag {
+    font-size: 10px;
+    background: rgba(245,166,35,0.1); color: #F5A623;
+    padding: 3px 8px; border-radius: 20px;
+    border: 1px solid rgba(245,166,35,0.2);
+  }
+  .prof-view-btn {
+    width: 100%; padding: 10px; border-radius: 10px;
+    background: linear-gradient(135deg, #F5A623, #e8902a);
+    border: none; color: #1a1626; font-weight: 700;
+    font-size: 12px; cursor: pointer;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .prof-view-btn:hover { opacity: 0.85; }
+
+  /* No results */
+  .no-results {
+    text-align: center; padding: 60px; color: #5a5670;
+    display: none;
+  }
+  .no-results-icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* AI Query section */
+  .ai-section {
+    background: rgba(245,166,35,0.04);
+    border: 1px solid rgba(245,166,35,0.15);
+    border-radius: 20px; padding: 28px;
+  }
+  .ai-section-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .ai-icon { font-size: 22px; }
+  .ai-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; color: #f0ece6;
+  }
+  .ai-desc { font-size: 13px; color: #9a96b4; margin-bottom: 16px; }
+  .ai-input-row { display: flex; gap: 10px; }
+  .ai-input {
+    flex: 1; padding: 13px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; color: #f0ece6; font-size: 14px;
+  }
+  .ai-btn {
+    padding: 13px 22px;
+    background: linear-gradient(135deg, #F5A623, #e8902a);
+    border: none; border-radius: 12px;
+    color: #1a1626; font-weight: 700; cursor: pointer; font-size: 14px;
+    white-space: nowrap; transition: opacity 0.2s;
+  }
+  .ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .ai-response {
+    margin-top: 16px; padding: 16px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px; font-size: 14px;
+    color: #c8c4d8; line-height: 1.8;
+    white-space: pre-wrap; display: none;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,8,20,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #12101e;
+    border: 1px solid rgba(245,166,35,0.2);
+    border-radius: 24px; width: 100%; max-width: 720px;
+    max-height: 90vh; display: flex; flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+
+  /* Modal header */
+  .modal-header {
+    padding: 24px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-prof-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; color: #f0ece6; font-weight: 700;
+  }
+  .modal-prof-sub { font-size: 12px; color: #9a96b4; margin-top: 3px; }
+  .modal-rating-wrap { display: flex; align-items: center; gap: 16px; }
+  .modal-rating-num {
+    font-size: 28px; font-weight: 900; color: #F5A623;
+    font-family: monospace; line-height: 1; text-align: center;
+  }
+  .modal-close {
+    background: rgba(255,255,255,0.07); border: none;
+    color: #9a96b4; border-radius: 50%;
+    width: 36px; height: 36px; cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close:hover { color: #f0ece6; }
+
+  /* Messages */
+  .messages-area {
+    flex: 1; overflow-y: auto; padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .msg-row { display: flex; }
+  .msg-row.user { justify-content: flex-end; }
+  .msg-row.assistant { justify-content: flex-start; }
+  .msg-bubble {
+    max-width: 85%; padding: 14px 18px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .msg-bubble.user {
+    background: linear-gradient(135deg, #F5A623, #e8902a);
+    color: #1a1626; font-weight: 600; font-size: 14px;
+    border-radius: 18px 18px 4px 18px;
+  }
+  .msg-bubble.assistant {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.07);
+    color: #c8c4d8; font-size: 14px; line-height: 1.7;
+    border-radius: 18px 18px 18px 4px;
+  }
+  .msg-bubble.assistant p { margin: 4px 0; line-height: 1.7; font-size: 14px; }
+  .msg-bubble.assistant p.highlight-line { color: #f0ece6; }
+
+  /* Loading dots */
+  .loading-dots {
+    display: flex; gap: 6px; padding: 14px 18px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px 18px 18px 4px;
+    width: fit-content;
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #F5A623; animation: bounce 1s infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Feedback form */
+  .feedback-form {
+    padding: 20px 28px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: rgba(245,166,35,0.04);
+    display: none;
+  }
+  .feedback-form.show { display: block; }
+  .anon-note { font-size: 13px; color: #9a96b4; margin-bottom: 12px; }
+  .rating-label { font-size: 12px; color: #9a96b4; margin-bottom: 6px; }
+  .star-rating { display: flex; gap: 4px; margin-bottom: 12px; }
+  .star-input {
+    font-size: 24px; cursor: pointer;
+    color: #3a3a5c; transition: color 0.15s, transform 0.15s;
+    display: inline-block;
+  }
+  .star-input.active, .star-input.hovered { color: #F5A623; }
+  .star-input.hovered { transform: scale(1.2); }
+  .feedback-textarea {
+    width: 100%; min-height: 80px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; color: #f0ece6;
+    padding: 12px; font-size: 14px;
+    resize: vertical;
+  }
+  .feedback-actions { display: flex; gap: 10px; margin-top: 12px; }
+  .submit-btn {
+    flex: 1; padding: 12px; border-radius: 12px;
+    background: linear-gradient(135deg, #F5A623, #e8902a);
+    border: none; color: #1a1626; font-weight: 700;
+    font-size: 13px; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .cancel-btn {
+    padding: 12px 18px; border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #9a96b4; cursor: pointer;
+  }
+
+  /* Input bar */
+  .input-bar {
+    padding: 16px 28px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; gap: 10px; align-items: center;
+  }
+  .leave-feedback-btn {
+    padding: 12px 16px; border-radius: 12px;
+    background: rgba(245,166,35,0.1);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: #F5A623; cursor: pointer;
+    font-size: 12px; font-weight: 700;
+    white-space: nowrap; font-family: 'DM Sans', sans-serif;
+    transition: background 0.2s;
+  }
+  .leave-feedback-btn:hover { background: rgba(245,166,35,0.18); }
+  .chat-input {
+    flex: 1; padding: 12px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; color: #f0ece6; font-size: 14px;
+  }
+  .send-btn {
+    padding: 12px 18px; border-radius: 12px;
+    background: linear-gradient(135deg, #F5A623, #e8902a);
+    border: none; color: #1a1626; font-weight: 700;
+    cursor: pointer; font-size: 16px; transition: opacity 0.2s;
+  }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<!-- Hero Header -->
+<div class="hero-header">
+  <div class="hero-orb"></div>
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <div class="hero-badge-icon">🎓</div>
+      <span class="hero-badge-text">University Feedback Portal</span>
+    </div>
+    <h1 class="hero-title">Professor<br><span class="accent">Feedback</span> Hub</h1>
+    <p class="hero-desc">Share anonymous feedback, read student experiences, and get AI-powered insights about your professors.</p>
+    <div class="search-wrap">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          id="searchInput"
+          class="search-input"
+          placeholder="Search by professor name, department, or course..."
+          oninput="filterProfessors()"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+
+  <!-- Stats Bar -->
+  <div class="stats-bar" id="statsBar"></div>
+
+  <!-- Professor Grid -->
+  <div class="prof-section">
+    <h2 class="prof-section-title" id="profSectionTitle">All Professors</h2>
+    <div class="prof-grid" id="profGrid"></div>
+    <div class="no-results" id="noResults">
+      <div class="no-results-icon">🔍</div>
+      <div id="noResultsText"></div>
+    </div>
+  </div>
+
+  <!-- General AI Query -->
+  <div class="ai-section">
+    <div class="ai-section-header">
+      <span class="ai-icon">🤖</span>
+      <h3 class="ai-title">Ask AI About Professors</h3>
+    </div>
+    <p class="ai-desc">Ask anything — compare professors, get recommendations, or request feedback summaries.</p>
+    <div class="ai-input-row">
+      <input
+        type="text"
+        id="aiQueryInput"
+        class="ai-input"
+        placeholder="e.g. Which professor has the best feedback? Who is best for beginners?"
+        onkeydown="if(event.key==='Enter') askGeneral()"
+      />
+      <button class="ai-btn" id="aiBtn" onclick="askGeneral()">Ask →</button>
+    </div>
+    <div class="ai-response" id="aiResponse"></div>
+  </div>
+
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-prof-name" id="modalProfName"></div>
+        <div class="modal-prof-sub" id="modalProfSub"></div>
+      </div>
+      <div class="modal-rating-wrap">
+        <div>
+          <div class="modal-rating-num" id="modalRatingNum"></div>
+          <div class="stars" id="modalStars"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+    </div>
+    <div class="messages-area" id="messagesArea"></div>
+    <div class="feedback-form" id="feedbackForm">
+      <div class="anon-note">🔒 Your feedback is completely anonymous</div>
+      <div class="rating-label">Your Rating</div>
+      <div class="star-rating" id="starRating"></div>
+      <textarea
+        class="feedback-textarea"
+        id="feedbackText"
+        placeholder="Share your honest experience with this professor..."
+      ></textarea>
+      <div class="feedback-actions">
+        <button class="submit-btn" id="submitBtn" onclick="submitFeedback()" disabled>Submit Anonymously ✓</button>
+        <button class="cancel-btn" onclick="closeFeedbackForm()">Cancel</button>
+      </div>
+    </div>
+    <div class="input-bar" id="inputBar">
+      <button class="leave-feedback-btn" onclick="openFeedbackForm()">✏️ Leave Feedback</button>
+      <input
+        type="text"
+        class="chat-input"
+        id="chatInput"
+        placeholder="Ask about this professor..."
+        onkeydown="if(event.key==='Enter') sendMessage()"
+      />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">→</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are an AI assistant for a university Professor Feedback Platform.
+
+CORE RULES:
+- All student feedback is 100% ANONYMOUS. Never reveal or ask for student identity.
+- Always maintain professional, neutral, constructive language.
+- If asked "who wrote this feedback?" respond: "All feedback is completely anonymous."
+- Flag offensive feedback and ask for revision.
+
+YOUR CAPABILITIES:
+
+1. SEARCH PROFESSORS
+   - Help find professors by name or department
+   - Return: name, department, courses, average rating
+
+2. VIEW FEEDBACK
+   - Show existing anonymous student feedbacks for a professor
+   - Never show student names, emails, or IDs
+   - Show only: date, course (optional), rating, written comment
+
+3. LEAVE FEEDBACK
+   - Collect: star rating (1-5), written comment, course name (optional)
+   - Confirm anonymity before submission
+   - Ask for honest, constructive feedback
+
+4. AI OVERALL CONCLUSION
+   Generate structured conclusion from all feedbacks:
+   ✅ Strengths: [key positive themes]
+   ⚠️ Areas to Improve: [constructive themes]
+   📊 Overall Sentiment: Positive / Mixed / Needs Improvement
+   💬 AI Conclusion: [2-3 sentence professional summary]
+
+RESPONSE FORMAT:
+Structure responses with clear sections using emojis as headers.
+Be concise, warm, and helpful. Encourage honest, respectful academic feedback.`;
+
+const professors = [
+  { id: 1, name: "Dr. Sarah Mitchell", dept: "Computer Science", courses: ["Algorithms", "Data Structures"], rating: 4.3 },
+  { id: 2, name: "Prof. James Okafor", dept: "Mathematics", courses: ["Calculus II", "Linear Algebra"], rating: 3.8 },
+  { id: 3, name: "Dr. Elena Vasquez", dept: "Physics", courses: ["Quantum Mechanics", "Thermodynamics"], rating: 4.7 },
+  { id: 4, name: "Prof. David Chen", dept: "Literature", courses: ["Modern Fiction", "Creative Writing"], rating: 4.1 },
+  { id: 5, name: "Dr. Amina Hassan", dept: "Biology", courses: ["Cell Biology", "Genetics"], rating: 3.5 },
+  { id: 6, name: "Prof. Marco Rossi", dept: "Economics", courses: ["Microeconomics", "Game Theory"], rating: 4.6 },
+];
+
+const avatarColors = [
+  "hsl(60,60%,55%)", "hsl(120,60%,55%)", "hsl(180,60%,55%)",
+  "hsl(240,60%,55%)", "hsl(300,60%,55%)", "hsl(360,60%,55%)"
+];
+
+// State
+let currentProf = null;
+let messages = [];
+let modalLoading = false;
+let feedbackRating = 0;
+let feedbackHover = 0;
+
+// ── Render Stats ──
+function renderStats() {
+  const avgRating = (professors.reduce((a,b) => a + b.rating, 0) / professors.length).toFixed(1);
+  const depts = new Set(professors.map(p => p.dept)).size;
+  const stats = [
+    { icon: "👨‍🏫", value: professors.length, label: "Total Professors" },
+    { icon: "⭐", value: avgRating, label: "Avg Rating" },
+    { icon: "🔒", value: "247", label: "Anonymous Reviews" },
+    { icon: "🏛️", value: depts, label: "Departments" },
+  ];
+  document.getElementById('statsBar').innerHTML = stats.map(s => `
+    <div class="stat-card">
+      <div class="stat-icon">${s.icon}</div>
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>
+  `).join('');
+}
+
+// ── Render Stars ──
+function starsHTML(rating, size = 12) {
+  return [1,2,3,4,5].map(i =>
+    `<span class="star ${i <= Math.round(rating) ? 'filled' : ''}" style="font-size:${size}px;">★</span>`
+  ).join('');
+}
+
+// ── Render Prof Cards ──
+function renderProfGrid(filtered) {
+  const grid = document.getElementById('profGrid');
+  const noResults = document.getElementById('noResults');
+  const title = document.getElementById('profSectionTitle');
+  const search = document.getElementById('searchInput').value.trim();
+
+  title.textContent = search ? `Results for "${search}" (${filtered.length})` : "All Professors";
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    noResults.style.display = 'block';
+    document.getElementById('noResultsText').textContent = `No professors found for "${search}"`;
+    return;
+  }
+  noResults.style.display = 'none';
+  grid.innerHTML = filtered.map((prof, idx) => `
+    <div class="prof-card" onclick="openModal(${prof.id})">
+      <div class="prof-card-top">
+        <div>
+          <div class="prof-avatar" style="background:${avatarColors[(prof.id-1) % avatarColors.length]};">
+            ${prof.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+          </div>
+          <div class="prof-name">${prof.name}</div>
+          <div class="prof-dept">${prof.dept}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="prof-rating-num">${prof.rating}</div>
+          <div class="stars">${starsHTML(prof.rating, 12)}</div>
+        </div>
+      </div>
+      <div class="prof-courses">
+        ${prof.courses.map(c => `<span class="course-tag">${c}</span>`).join('')}
+      </div>
+      <button class="prof-view-btn">📋 View Feedback</button>
+    </div>
+  `).join('');
+}
+
+// ── Filter ──
+function filterProfessors() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const filtered = professors.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.dept.toLowerCase().includes(q) ||
+    p.courses.some(c => c.toLowerCase().includes(q))
+  );
+  renderProfGrid(filtered);
+}
+
+// ── Call Anthropic API ──
+async function callAPI(msgs) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: SYSTEM_PROMPT,
+      messages: msgs,
+    }),
+  });
+  const data = await res.json();
+  return data.content?.[0]?.text || "Sorry, I couldn't fetch feedback right now.";
+}
+
+// ── Render Messages ──
+function renderMessages() {
+  const area = document.getElementById('messagesArea');
+  let html = messages.map(msg => {
+    if (msg.role === 'user') {
+      return `<div class="msg-row user"><div class="msg-bubble user">${escapeHTML(msg.content)}</div></div>`;
+    } else {
+      const formatted = msg.content.split('\n').map(line => {
+        const isHighlight = line.startsWith('✅') || line.startsWith('⚠️') || line.startsWith('📊') || line.startsWith('💬');
+        return `<p class="${isHighlight ? 'highlight-line' : ''}">${escapeHTML(line) || '&nbsp;'}</p>`;
+      }).join('');
+      return `<div class="msg-row assistant"><div class="msg-bubble assistant">${formatted}</div></div>`;
+    }
+  }).join('');
+
+  if (modalLoading) {
+    html += `<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  }
+
+  area.innerHTML = html;
+  area.scrollTop = area.scrollHeight;
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Open Modal ──
+async function openModal(profId) {
+  currentProf = professors.find(p => p.id === profId);
+  if (!currentProf) return;
+  messages = [];
+  feedbackRating = 0;
+
+  document.getElementById('modalProfName').textContent = currentProf.name;
+  document.getElementById('modalProfSub').textContent = `${currentProf.dept} · ${currentProf.courses.join(", ")}`;
+  document.getElementById('modalRatingNum').textContent = currentProf.rating;
+  document.getElementById('modalStars').innerHTML = starsHTML(currentProf.rating, 14);
+  document.getElementById('feedbackForm').classList.remove('show');
+  document.getElementById('inputBar').style.display = 'flex';
+  document.getElementById('feedbackText').value = '';
+  renderStarRating();
+
+  document.getElementById('modalOverlay').classList.add('show');
+
+  // Send initial message
+  modalLoading = true;
+  renderMessages();
+
+  const initMsg = `Show me all anonymous feedback and AI conclusion for ${currentProf.name} from the ${currentProf.dept} department who teaches ${currentProf.courses.join(", ")}. Their current average rating is ${currentProf.rating}/5. Generate some sample realistic feedback entries and an AI overall conclusion.`;
+  try {
+    const reply = await callAPI([{ role: "user", content: initMsg }]);
+    messages.push({ role: "assistant", content: reply });
+  } catch(e) {
+    messages.push({ role: "assistant", content: "Connection error. Please try again." });
+  }
+  modalLoading = false;
+  renderMessages();
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  currentProf = null;
+  messages = [];
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+// ── Send Chat Message ──
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || modalLoading) return;
+  input.value = '';
+
+  messages.push({ role: "user", content: text });
+  modalLoading = true;
+  renderMessages();
+
+  try {
+    const reply = await callAPI(messages);
+    messages.push({ role: "assistant", content: reply });
+  } catch(e) {
+    messages.push({ role: "assistant", content: "Connection error. Please try again." });
+  }
+  modalLoading = false;
+  renderMessages();
+}
+
+// ── Feedback Form ──
+function renderStarRating() {
+  const container = document.getElementById('starRating');
+  container.innerHTML = [1,2,3,4,5].map(i => `
+    <span class="star-input ${i <= feedbackRating ? 'active' : ''}"
+      onmouseenter="hoverStar(${i})"
+      onmouseleave="unhoverStar()"
+      onclick="clickStar(${i})"
+    >★</span>
+  `).join('');
+}
+
+function hoverStar(n) {
+  document.querySelectorAll('.star-input').forEach((el, i) => {
+    el.classList.toggle('active', i < n);
+    el.classList.toggle('hovered', i === n - 1);
+  });
+}
+function unhoverStar() { renderStarRating(); }
+function clickStar(n) {
+  feedbackRating = n;
+  renderStarRating();
+  checkSubmitReady();
+}
+
+function checkSubmitReady() {
+  const text = document.getElementById('feedbackText').value.trim();
+  document.getElementById('submitBtn').disabled = !text || feedbackRating === 0;
+}
+
+function openFeedbackForm() {
+  document.getElementById('feedbackForm').classList.add('show');
+  document.getElementById('inputBar').style.display = 'none';
+}
+function closeFeedbackForm() {
+  document.getElementById('feedbackForm').classList.remove('show');
+  document.getElementById('inputBar').style.display = 'flex';
+}
+
+async function submitFeedback() {
+  const text = document.getElementById('feedbackText').value.trim();
+  if (!text || feedbackRating === 0) return;
+
+  closeFeedbackForm();
+  document.getElementById('feedbackText').value = '';
+
+  const userMsg = {
+    role: "user",
+    content: `A student just submitted anonymous feedback for ${currentProf.name}:\nRating: ${feedbackRating}/5 stars\nCourse: (anonymous)\nFeedback: "${text}"\nPlease acknowledge this submission, confirm anonymity, and update the AI conclusion based on this new feedback added to the existing ones.`
+  };
+  messages.push(userMsg);
+  feedbackRating = 0;
+  modalLoading = true;
+  renderMessages();
+
+  try {
+    const reply = await callAPI(messages);
+    messages.push({ role: "assistant", content: reply });
+  } catch(e) {
+    messages.push({ role: "assistant", content: "Connection error. Please try again." });
+  }
+  modalLoading = false;
+  renderMessages();
+}
+
+// ── General AI Query ──
+async function askGeneral() {
+  const input = document.getElementById('aiQueryInput');
+  const btn = document.getElementById('aiBtn');
+  const responseEl = document.getElementById('aiResponse');
+  const query = input.value.trim();
+  if (!query) return;
+
+  btn.textContent = '...';
+  btn.disabled = true;
+  responseEl.style.display = 'none';
+
+  const fullQuery = `Here are the professors in the system: ${JSON.stringify(professors)}. Question: ${query}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: fullQuery }],
+      }),
+    });
+    const data = await res.json();
+    responseEl.textContent = data.content?.[0]?.text || "No response.";
+  } catch(e) {
+    responseEl.textContent = "Error connecting to AI.";
+  }
+
+  responseEl.style.display = 'block';
+  btn.textContent = 'Ask →';
+  btn.disabled = false;
+  input.value = '';
+}
+
+// ── Feedback textarea listener ──
+document.getElementById('feedbackText').addEventListener('input', checkSubmitReady);
+
+// ── Init ──
+renderStats();
+renderProfGrid(professors);
+</script>
+</body>
+</html>
+
