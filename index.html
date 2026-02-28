@@ -38,6 +38,8 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+button { font-family: inherit; }
+
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; min-height: 100vh; }
 
 .bg-canvas { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
@@ -78,13 +80,13 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; a
 
 .nav-right { display: flex; align-items: center; gap: 12px; }
 
-.btn-login { font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 0.9rem; color: #ccc; background: transparent; border: 1px solid rgba(255,255,255,0.15); padding: 9px 22px; border-radius: 50px; cursor: pointer; transition: all 0.25s; text-decoration: none; }
+.btn-login, button.btn-login { font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 0.9rem; color: #ccc; background: transparent; border: 1px solid rgba(255,255,255,0.15); padding: 9px 22px; border-radius: 50px; cursor: pointer; transition: all 0.25s; text-decoration: none; }
 
-.btn-login:hover { color: #fff; border-color: var(--purple); background: rgba(124,106,247,0.1); }
+.btn-login:hover, button.btn-login:hover { color: #fff; border-color: var(--purple); background: rgba(124,106,247,0.1); }
 
-.btn-register { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.9rem; color: #fff; background: linear-gradient(135deg, #7c6af7, #9b5cf4); border: none; padding: 10px 24px; border-radius: 50px; cursor: pointer; transition: all 0.25s; text-decoration: none; box-shadow: 0 4px 20px rgba(124,106,247,0.4); }
+.btn-register, button.btn-register { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.9rem; color: #fff; background: linear-gradient(135deg, #7c6af7, #9b5cf4); border: none; padding: 10px 24px; border-radius: 50px; cursor: pointer; transition: all 0.25s; text-decoration: none; box-shadow: 0 4px 20px rgba(124,106,247,0.4); }
 
-.btn-register:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,106,247,0.6); }
+.btn-register:hover, button.btn-register:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,106,247,0.6); }
 
 /* NAV USER (logged in) */
 
@@ -120,9 +122,9 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; a
 
 .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 80px; }
 
-.cta-primary { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; color: #fff; background: linear-gradient(135deg, #7c6af7, #9b5cf4); border: none; padding: 15px 36px; border-radius: 50px; cursor: pointer; transition: all 0.3s; text-decoration: none; box-shadow: 0 6px 30px rgba(124,106,247,0.5); letter-spacing: 0.3px; }
+.cta-primary, a.cta-primary, button.cta-primary { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; color: #fff; background: linear-gradient(135deg, #7c6af7, #9b5cf4); border: none; padding: 15px 36px; border-radius: 50px; cursor: pointer; transition: all 0.3s; text-decoration: none; box-shadow: 0 6px 30px rgba(124,106,247,0.5); letter-spacing: 0.3px; }
 
-.cta-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(124,106,247,0.7); }
+.cta-primary:hover, a.cta-primary:hover, button.cta-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(124,106,247,0.7); }
 
 .cta-secondary { font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 1rem; color: #ccc; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); padding: 15px 36px; border-radius: 50px; cursor: pointer; transition: all 0.3s; text-decoration: none; backdrop-filter: blur(10px); }
 
@@ -926,9 +928,9 @@ footer { position: relative; z-index: 1; text-align: center; padding: 30px 24px;
 
  <div class="nav-right" id="navGuest">
 
-   <a href="#" class="btn-login" onclick="openLogin(); return false;">Log In</a>
+   <button class="btn-login" onclick="openLogin();">Log In</button>
 
-   <a href="#" class="btn-register" onclick="openReg(); return false;">Get Started →</a>
+   <button class="btn-register" onclick="openReg();">Get Started →</button>
 
  </div>
 
@@ -970,7 +972,7 @@ footer { position: relative; z-index: 1; text-align: center; padding: 30px 24px;
 
    <div class="hero-cta">
 
-     <a href="#" class="cta-primary" onclick="openReg(); return false;">Start for Free 🎓</a>
+     <button class="cta-primary" onclick="openReg();">Start for Free 🎓</button>
 
      <a href="#features" class="cta-secondary">See what's inside ↓</a>
 
@@ -1280,7 +1282,7 @@ footer { position: relative; z-index: 1; text-align: center; padding: 30px 24px;
 
    <p>Join thousands of students already using ULoop to learn better, study together and speak up.</p>
 
-   <a href="#" class="cta-primary" onclick="openReg(); return false;" style="font-size:1.05rem;padding:16px 42px;">Join ULoop Free →</a>
+   <button class="cta-primary" onclick="openReg();" style="font-size:1.05rem;padding:16px 42px;">Join ULoop Free →</button>
 
  </section>
 
@@ -2283,3 +2285,9 @@ function checkStr(val) {
  document.getElementById('str-lbl').textContent = score > 0 ? labels[score-1] : '';
 
 }
+
+</script>
+
+</body>
+
+</html>
