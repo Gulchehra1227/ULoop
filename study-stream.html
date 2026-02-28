@@ -501,7 +501,10 @@ nav {
 }
 .video-tile video {
   width: 100%; height: 100%; object-fit: cover;
-  display: block;
+  display: block; background: var(--surface2);
+}
+.video-tile video::-webkit-media-controls-enclosure {
+  display: none;
 }
 .video-tile-info {
   position: absolute; bottom: 10px; left: 12px; right: 12px;
@@ -1294,24 +1297,33 @@ function renderVideoGrid() {
   const selfTile = document.createElement('div');
   selfTile.className = 'video-tile self';
   selfTile.id = 'selfTile';
+  
   if (localStream && camOn) {
     const video = document.createElement('video');
     video.srcObject = localStream;
     video.autoplay = true;
     video.muted = true;
     video.playsInline = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+    video.style.display = 'block';
     selfTile.appendChild(video);
   } else {
-    selfTile.innerHTML = `
-      <div class="video-placeholder">
-        <div class="video-avatar" style="background:var(--green);color:#050510;">You</div>
-        <div class="video-avatar-name">Camera off</div>
-      </div>`;
+    const placeholder = document.createElement('div');
+    placeholder.className = 'video-placeholder';
+    placeholder.innerHTML = `
+      <div class="video-avatar" style="background:var(--green);color:#050510;">You</div>
+      <div class="video-avatar-name">Camera off</div>`;
+    selfTile.appendChild(placeholder);
   }
-  selfTile.innerHTML += `<div class="video-tile-info">
+  
+  const info = document.createElement('div');
+  info.className = 'video-tile-info';
+  info.innerHTML = `
     <span class="video-tile-name">You (Me)</span>
-    <span class="video-tile-mute">${micOn ? '🎙️' : '🔇'}</span>
-  </div>`;
+    <span class="video-tile-mute">${micOn ? '🎙️' : '🔇'}</span>`;
+  selfTile.appendChild(info);
   grid.appendChild(selfTile);
 
   // Mock students
@@ -1344,13 +1356,50 @@ function toggleCam() {
   btn.textContent = camOn ? '📹' : '🚫';
   if (localStream) {
     localStream.getVideoTracks().forEach(t => t.enabled = camOn);
-    const selfTile = document.getElementById('selfTile');
-    if (!camOn) {
-      const vid = selfTile.querySelector('video');
-      if (vid) vid.style.display = 'none';
+  }
+  // Re-render the video tile to show/hide camera
+  const selfTile = document.getElementById('selfTile');
+  if (selfTile) {
+    selfTile.remove();
+    // Get the grid and re-add the self tile
+    const grid = document.getElementById('videoGrid');
+    const firstChild = grid.firstChild;
+    
+    const newSelfTile = document.createElement('div');
+    newSelfTile.className = 'video-tile self';
+    newSelfTile.id = 'selfTile';
+    
+    if (localStream && camOn) {
+      const video = document.createElement('video');
+      video.srcObject = localStream;
+      video.autoplay = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'cover';
+      video.style.display = 'block';
+      newSelfTile.appendChild(video);
     } else {
-      const vid = selfTile.querySelector('video');
-      if (vid) vid.style.display = 'block';
+      const placeholder = document.createElement('div');
+      placeholder.className = 'video-placeholder';
+      placeholder.innerHTML = `
+        <div class="video-avatar" style="background:var(--green);color:#050510;">You</div>
+        <div class="video-avatar-name">Camera off</div>`;
+      newSelfTile.appendChild(placeholder);
+    }
+    
+    const info = document.createElement('div');
+    info.className = 'video-tile-info';
+    info.innerHTML = `
+      <span class="video-tile-name">You (Me)</span>
+      <span class="video-tile-mute">${micOn ? '🎙️' : '🔇'}</span>`;
+    newSelfTile.appendChild(info);
+    
+    if (firstChild) {
+      grid.insertBefore(newSelfTile, firstChild);
+    } else {
+      grid.appendChild(newSelfTile);
     }
   }
 }
@@ -1362,6 +1411,14 @@ function toggleMic() {
   btn.textContent = micOn ? '🎙️' : '🔇';
   if (localStream) {
     localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  }
+  // Update the mic icon in the video tile
+  const tileInfo = document.querySelector('#selfTile .video-tile-info');
+  if (tileInfo) {
+    const muteSpan = tileInfo.querySelector('.video-tile-mute');
+    if (muteSpan) {
+      muteSpan.textContent = micOn ? '🎙️' : '🔇';
+    }
   }
 }
 
