@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ULoop — Study Stream</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #050510;
+  --surface:   #0d0d20;
+  --surface2:  #13132e;
+  --surface3:  #1a1a3a;
+  --green:     #00e5a0;
+  --green-dim: rgba(0, 229, 160, 0.15);
+  --green-glow:rgba(0, 229, 160, 0.3);
+  --teal:      #0af0d0;
+  --purple:    #7c6af7;
+  --border:    rgba(0,229,160,0.12);
+  --border2:   rgba(255,255,255,0.07);
+  --text:      #e8f0ec;
+  --muted:     #6b7d76;
+  --danger:    #ff4d6a;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 2px; }
+
+/* ── BACKGROUND ── */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.bg-glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 10% 20%, rgba(0,229,160,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 90% 80%, rgba(124,106,247,0.08) 0%, transparent 60%);
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 48px;
+  background: rgba(5,5,16,0.7);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 900;
+  color: #fff; cursor: pointer;
+  letter-spacing: -0.5px;
+}
+.logo em { color: var(--green); font-style: normal; }
+.nav-live {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.75rem; font-weight: 700; color: var(--green);
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.live-dot {
+  width: 8px; height: 8px; background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--green);
+  animation: livePulse 1.5s infinite;
+}
+@keyframes livePulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+}
+.nav-back {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; font-weight: 600; color: var(--muted);
+  background: transparent; border: 1px solid var(--border2);
+  padding: 8px 18px; border-radius: 50px; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.nav-back:hover { color: var(--text); border-color: var(--border); }
+
+/* ══════════════════════════════
+   LOBBY SCREEN
+══════════════════════════════ */
+#lobbyScreen {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 120px 24px 60px;
+}
+
+.lobby-label {
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--green); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.lobby-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  font-weight: 900; line-height: 1.05;
+  text-align: center; margin-bottom: 16px;
+  letter-spacing: -2px;
+}
+.lobby-title .accent {
+  color: var(--green);
+  text-shadow: 0 0 40px rgba(0,229,160,0.4);
+}
+.lobby-sub {
+  color: var(--muted); font-size: 1.05rem;
+  max-width: 500px; text-align: center;
+  line-height: 1.7; margin-bottom: 60px;
+}
+
+/* STATS ROW */
+.lobby-stats {
+  display: flex; gap: 32px; margin-bottom: 70px;
+  flex-wrap: wrap; justify-content: center;
+}
+.lobby-stat {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.82rem; color: var(--muted);
+}
+.lobby-stat strong { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; }
+
+/* JOIN OPTIONS */
+.join-cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px; max-width: 780px; width: 100%;
+  margin-bottom: 48px;
+}
+
+.join-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 40px 36px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.23,1,0.32,1);
+  position: relative; overflow: hidden;
+  text-align: left;
+}
+.join-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: 0; transition: opacity 0.35s;
+}
+.join-card.private::before {
+  background: radial-gradient(circle at 30% 30%, rgba(0,229,160,0.1) 0%, transparent 65%);
+}
+.join-card.general::before {
+  background: radial-gradient(circle at 70% 30%, rgba(124,106,247,0.12) 0%, transparent 65%);
+}
+.join-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 32px 70px rgba(0,0,0,0.4);
+}
+.join-card.private:hover {
+  border-color: rgba(0,229,160,0.4);
+  box-shadow: 0 32px 70px rgba(0,229,160,0.1);
+}
+.join-card.general:hover {
+  border-color: rgba(124,106,247,0.4);
+  box-shadow: 0 32px 70px rgba(124,106,247,0.12);
+}
+.join-card:hover::before { opacity: 1; }
+
+.join-card-icon {
+  width: 64px; height: 64px; border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; margin-bottom: 22px;
+}
+.join-card.private .join-card-icon {
+  background: rgba(0,229,160,0.1);
+  border: 1px solid rgba(0,229,160,0.25);
+}
+.join-card.general .join-card-icon {
+  background: rgba(124,106,247,0.12);
+  border: 1px solid rgba(124,106,247,0.25);
+}
+
+.join-card-badge {
+  font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 50px;
+  display: inline-block; margin-bottom: 14px;
+}
+.join-card.private .join-card-badge {
+  background: rgba(0,229,160,0.1);
+  color: var(--green);
+  border: 1px solid rgba(0,229,160,0.2);
+}
+.join-card.general .join-card-badge {
+  background: rgba(124,106,247,0.12);
+  color: var(--purple);
+  border: 1px solid rgba(124,106,247,0.2);
+}
+
+.join-card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 700;
+  color: #fff; margin-bottom: 10px;
+}
+.join-card-desc {
+  color: var(--muted); font-size: 0.875rem;
+  line-height: 1.7; margin-bottom: 28px;
+}
+.join-card-features {
+  list-style: none; display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 28px;
+}
+.join-card-features li {
+  font-size: 0.8rem; color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.join-card-features li::before {
+  content: '✓';
+  font-weight: 700; font-size: 0.7rem;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.join-card.private .join-card-features li::before {
+  background: rgba(0,229,160,0.15); color: var(--green);
+}
+.join-card.general .join-card-features li::before {
+  background: rgba(124,106,247,0.15); color: var(--purple);
+}
+
+.join-card-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 14px 20px;
+  border-radius: 14px; border: none;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.25s;
+}
+.join-card.private .join-card-btn {
+  background: linear-gradient(135deg, rgba(0,229,160,0.2), rgba(10,240,208,0.15));
+  border: 1px solid rgba(0,229,160,0.3);
+  color: var(--green);
+}
+.join-card.private .join-card-btn:hover {
+  background: linear-gradient(135deg, rgba(0,229,160,0.35), rgba(10,240,208,0.25));
+  box-shadow: 0 8px 28px rgba(0,229,160,0.2);
+}
+.join-card.general .join-card-btn {
+  background: linear-gradient(135deg, rgba(124,106,247,0.2), rgba(155,92,244,0.15));
+  border: 1px solid rgba(124,106,247,0.3);
+  color: var(--purple);
+}
+.join-card.general .join-card-btn:hover {
+  background: linear-gradient(135deg, rgba(124,106,247,0.35), rgba(155,92,244,0.25));
+  box-shadow: 0 8px 28px rgba(124,106,247,0.2);
+}
+
+/* ACTIVE ROOMS PREVIEW */
+.active-rooms {
+  max-width: 780px; width: 100%;
+}
+.active-rooms-label {
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.active-rooms-label::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--border);
+}
+.rooms-row {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.room-chip {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 50px; padding: 8px 16px;
+  font-size: 0.78rem; cursor: pointer;
+  transition: all 0.2s;
+}
+.room-chip:hover { border-color: var(--border); background: var(--surface2); }
+.room-chip-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+.room-chip-name { color: var(--text); font-weight: 600; }
+.room-chip-count { color: var(--muted); }
+
+
+/* ══════════════════════════════
+   SETUP MODAL (Private group link)
+══════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(16px);
+  z-index: 500;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+
+.setup-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 48px 44px;
+  max-width: 520px; width: 100%;
+  position: relative;
+  animation: slideUp 0.35s cubic-bezier(0.23,1,0.32,1);
+}
+@keyframes slideUp {
+  from { opacity:0; transform: translateY(30px) scale(0.97); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+.modal-close {
+  position: absolute; top: 18px; right: 20px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--muted); width: 34px; height: 34px;
+  border-radius: 50%; cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; font-family: inherit;
+}
+.modal-close:hover { background: var(--surface3); color: var(--text); }
+.modal-icon {
+  width: 60px; height: 60px; border-radius: 18px;
+  background: var(--green-dim); border: 1px solid rgba(0,229,160,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; margin-bottom: 22px;
+}
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem; font-weight: 700;
+  color: #fff; margin-bottom: 8px;
+}
+.modal-sub { color: var(--muted); font-size: 0.875rem; line-height: 1.6; margin-bottom: 32px; }
+
+.field-label {
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px; display: block;
+}
+.field-input {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: 12px;
+  padding: 13px 16px; color: var(--text);
+  font-size: 0.9rem; outline: none;
+  font-family: 'Syne', sans-serif;
+  transition: border-color 0.2s; margin-bottom: 20px;
+}
+.field-input:focus { border-color: rgba(0,229,160,0.4); }
+.field-input::placeholder { color: var(--muted); }
+
+.link-box {
+  background: var(--surface2);
+  border: 1px solid rgba(0,229,160,0.2);
+  border-radius: 14px; padding: 16px 18px;
+  margin-bottom: 20px;
+  display: none;
+}
+.link-box.show { display: block; }
+.link-label-small {
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--green); margin-bottom: 8px;
+}
+.link-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; color: var(--text);
+  word-break: break-all; line-height: 1.5;
+}
+.link-actions { display: flex; gap: 8px; margin-top: 12px; }
+.link-copy-btn {
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 0.78rem; padding: 8px 16px; border-radius: 8px;
+  background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.25);
+  color: var(--green); cursor: pointer; transition: all 0.2s;
+}
+.link-copy-btn:hover { background: rgba(0,229,160,0.2); }
+
+.btn-primary {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--green), var(--teal));
+  border: none; border-radius: 14px; color: #050510;
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 0.95rem; cursor: pointer;
+  box-shadow: 0 8px 30px rgba(0,229,160,0.3);
+  transition: all 0.25s; letter-spacing: 0.3px;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(0,229,160,0.45);
+}
+.btn-secondary {
+  width: 100%; padding: 13px;
+  background: transparent; border: 1px solid var(--border2);
+  border-radius: 14px; color: var(--muted);
+  font-family: 'Syne', sans-serif; font-weight: 600;
+  font-size: 0.88rem; cursor: pointer; transition: all 0.2s;
+  margin-top: 10px;
+}
+.btn-secondary:hover { border-color: var(--border); color: var(--text); }
+
+
+/* ══════════════════════════════
+   STREAM ROOM
+══════════════════════════════ */
+#streamRoom {
+  display: none;
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  padding-top: 72px;
+}
+
+.room-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  height: calc(100vh - 72px);
+}
+
+/* ── VIDEO AREA ── */
+.video-area {
+  background: var(--surface);
+  border-right: 1px solid var(--border2);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.video-area-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.room-name-display {
+  display: flex; align-items: center; gap: 10px;
+}
+.room-type-badge {
+  font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 50px;
+}
+.room-type-badge.private-badge {
+  background: var(--green-dim); color: var(--green);
+  border: 1px solid rgba(0,229,160,0.2);
+}
+.room-type-badge.general-badge {
+  background: rgba(124,106,247,0.12); color: var(--purple);
+  border: 1px solid rgba(124,106,247,0.2);
+}
+.room-display-name {
+  font-size: 1rem; font-weight: 700; color: var(--text);
+}
+.room-live-count {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; color: var(--muted);
+}
+
+.video-grid {
+  flex: 1; overflow-y: auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  align-content: start;
+}
+.video-tile {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  aspect-ratio: 16/9;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.video-tile.speaking {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px rgba(0,229,160,0.2);
+}
+.video-tile.self {
+  border-color: rgba(0,229,160,0.3);
+}
+.video-tile video {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block;
+}
+.video-tile-info {
+  position: absolute; bottom: 10px; left: 12px; right: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.video-tile-name {
+  font-size: 0.75rem; font-weight: 700;
+  color: #fff; background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  padding: 4px 10px; border-radius: 20px;
+}
+.video-tile-mute {
+  font-size: 0.75rem; background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  padding: 4px 8px; border-radius: 20px;
+}
+.video-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 8px;
+}
+.video-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 700;
+  color: #fff;
+}
+.video-avatar-name {
+  font-size: 0.7rem; color: var(--muted);
+}
+
+/* ── CONTROLS BAR ── */
+.controls-bar {
+  padding: 18px 24px;
+  border-top: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; flex-shrink: 0;
+}
+.ctrl-btn {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; cursor: pointer; transition: all 0.2s;
+  border: none; font-family: inherit;
+}
+.ctrl-btn.cam-btn {
+  background: var(--green-dim); border: 1px solid rgba(0,229,160,0.3);
+}
+.ctrl-btn.cam-btn:hover { background: rgba(0,229,160,0.25); }
+.ctrl-btn.cam-btn.off {
+  background: rgba(255,77,106,0.12);
+  border-color: rgba(255,77,106,0.3);
+}
+.ctrl-btn.mic-btn {
+  background: var(--surface2); border: 1px solid var(--border2);
+}
+.ctrl-btn.mic-btn:hover { background: var(--surface3); }
+.ctrl-btn.mic-btn.off {
+  background: rgba(255,77,106,0.12);
+  border-color: rgba(255,77,106,0.3);
+}
+.ctrl-btn.end-btn {
+  width: auto; border-radius: 50px; padding: 0 22px;
+  background: rgba(255,77,106,0.15); border: 1px solid rgba(255,77,106,0.3);
+  color: var(--danger); font-size: 0.82rem; font-weight: 700;
+  gap: 6px; height: 44px;
+}
+.ctrl-btn.end-btn:hover { background: rgba(255,77,106,0.25); }
+
+/* ── SIDEBAR ── */
+.room-sidebar {
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* Tabs */
+.sidebar-tabs {
+  display: flex; border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+}
+.sidebar-tab {
+  flex: 1; padding: 16px 8px;
+  font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--muted); background: transparent;
+  border: none; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s; font-family: inherit;
+}
+.sidebar-tab.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+  background: rgba(0,229,160,0.03);
+}
+
+/* Tab Panels */
+.sidebar-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.sidebar-panel.active { display: flex; }
+
+/* ─── PLANNER ─── */
+.planner-panel {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 0; overflow: hidden;
+}
+.planner-session-info {
+  padding: 18px 20px; border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+}
+.session-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem; font-weight: 600;
+  color: var(--green); line-height: 1;
+  text-shadow: 0 0 20px rgba(0,229,160,0.3);
+}
+.session-label { font-size: 0.7rem; color: var(--muted); margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
+
+.planner-scroll { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 20px; }
+
+.plan-section-title {
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.plan-section-title .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+}
+
+/* TODO items */
+.todo-list { display: flex; flex-direction: column; gap: 6px; }
+.todo-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+.todo-item:hover { border-color: var(--border); }
+.todo-check {
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 2px solid var(--border2);
+  flex-shrink: 0; cursor: pointer;
+  transition: all 0.2s; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; color: transparent;
+}
+.todo-check.done {
+  background: var(--green-dim); border-color: var(--green);
+  color: var(--green);
+}
+.todo-text {
+  font-size: 0.82rem; color: var(--text);
+  line-height: 1.4; flex: 1;
+}
+.todo-text.crossed { text-decoration: line-through; color: var(--muted); }
+.todo-delete {
+  font-size: 0.8rem; color: var(--muted); cursor: pointer;
+  background: none; border: none; padding: 0; font-family: inherit;
+  opacity: 0; transition: opacity 0.2s;
+}
+.todo-item:hover .todo-delete { opacity: 1; }
+
+/* Add task input */
+.add-task-row {
+  display: flex; gap: 8px; margin-top: 8px;
+}
+.add-task-input {
+  flex: 1; padding: 9px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 10px; color: var(--text);
+  font-size: 0.82rem; outline: none;
+  font-family: 'Syne', sans-serif;
+  transition: border-color 0.2s;
+}
+.add-task-input:focus { border-color: rgba(0,229,160,0.3); }
+.add-task-input::placeholder { color: var(--muted); }
+.add-task-btn {
+  padding: 9px 14px;
+  background: var(--green-dim);
+  border: 1px solid rgba(0,229,160,0.25);
+  border-radius: 10px; color: var(--green);
+  font-size: 0.9rem; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.add-task-btn:hover { background: rgba(0,229,160,0.25); }
+
+/* Didn't do section */
+.undone-list { display: flex; flex-direction: column; gap: 6px; }
+.undone-item {
+  padding: 10px 12px;
+  background: rgba(255,77,106,0.06);
+  border: 1px solid rgba(255,77,106,0.12);
+  border-radius: 10px;
+  font-size: 0.82rem; color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.undone-item::before { content: '↩'; color: var(--danger); flex-shrink: 0; }
+
+/* Session summary */
+.session-summary {
+  padding: 14px 20px; border-top: 1px solid var(--border2);
+  flex-shrink: 0;
+}
+.end-session-btn {
+  width: 100%; padding: 13px;
+  background: rgba(255,77,106,0.1); border: 1px solid rgba(255,77,106,0.25);
+  border-radius: 12px; color: var(--danger);
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+}
+.end-session-btn:hover { background: rgba(255,77,106,0.2); }
+
+/* ─── COMMUNITY FEED ─── */
+.feed-panel {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.feed-list {
+  flex: 1; overflow-y: auto; padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.feed-item {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 14px 16px;
+  transition: all 0.2s;
+}
+.feed-item:hover { border-color: var(--border); }
+.feed-item-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.feed-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.feed-user-name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+.feed-time { font-size: 0.7rem; color: var(--muted); margin-left: auto; }
+.feed-plan-text { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+.feed-task-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.feed-task-chip {
+  font-size: 0.7rem; padding: 3px 10px; border-radius: 20px;
+  font-weight: 600;
+}
+.feed-task-chip.done-chip {
+  background: var(--green-dim); color: var(--green);
+  border: 1px solid rgba(0,229,160,0.2);
+}
+.feed-task-chip.undone-chip {
+  background: rgba(255,77,106,0.08); color: #ff7a90;
+  border: 1px solid rgba(255,77,106,0.15);
+}
+.feed-actions {
+  display: flex; gap: 12px; align-items: center;
+}
+.feed-like-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; color: var(--muted);
+  background: none; border: none; cursor: pointer;
+  font-family: 'Syne', sans-serif; font-weight: 600;
+  transition: color 0.2s; padding: 4px 10px;
+  border-radius: 20px; border: 1px solid var(--border2);
+}
+.feed-like-btn:hover, .feed-like-btn.liked {
+  color: #ff7a7a;
+  border-color: rgba(255,77,106,0.3);
+  background: rgba(255,77,106,0.06);
+}
+.feed-encourage-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; color: var(--muted);
+  background: none; border: none; cursor: pointer;
+  font-family: 'Syne', sans-serif; font-weight: 600;
+  transition: color 0.2s; padding: 4px 10px;
+  border-radius: 20px; border: 1px solid var(--border2);
+}
+.feed-encourage-btn:hover {
+  color: var(--green);
+  border-color: rgba(0,229,160,0.3);
+  background: var(--green-dim);
+}
+
+/* ── POST TO FEED ── */
+.post-to-feed {
+  padding: 14px 20px; border-top: 1px solid var(--border2); flex-shrink: 0;
+}
+.post-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.post-textarea {
+  width: 100%; min-height: 60px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; color: var(--text); padding: 10px 12px;
+  font-family: 'Syne', sans-serif; font-size: 0.82rem;
+  resize: none; outline: none; transition: border-color 0.2s;
+  margin-bottom: 8px;
+}
+.post-textarea:focus { border-color: rgba(0,229,160,0.3); }
+.post-textarea::placeholder { color: var(--muted); }
+.post-btn {
+  width: 100%; padding: 10px;
+  background: var(--green-dim); border: 1px solid rgba(0,229,160,0.25);
+  border-radius: 10px; color: var(--green);
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+}
+.post-btn:hover { background: rgba(0,229,160,0.2); }
+
+/* ── SESSION END OVERLAY ── */
+.end-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.9); backdrop-filter: blur(20px);
+  z-index: 600; align-items: center; justify-content: center;
+}
+.end-overlay.show { display: flex; }
+.end-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 28px; padding: 48px 44px;
+  max-width: 500px; width: 100%; text-align: center;
+  animation: slideUp 0.35s ease;
+}
+.end-emoji { font-size: 4rem; display: block; margin-bottom: 16px; }
+.end-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 8px;
+}
+.end-stats {
+  display: flex; gap: 24px; justify-content: center;
+  margin: 28px 0; flex-wrap: wrap;
+}
+.end-stat {
+  text-align: center;
+}
+.end-stat-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.8rem; font-weight: 600; color: var(--green);
+  display: block;
+}
+.end-stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.end-undone-preview {
+  background: rgba(255,77,106,0.06); border: 1px solid rgba(255,77,106,0.15);
+  border-radius: 14px; padding: 16px 20px;
+  margin-bottom: 24px; text-align: left;
+}
+.end-undone-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #ff7a90; margin-bottom: 10px; }
+.end-undone-items { display: flex; flex-direction: column; gap: 6px; }
+.end-undone-item { font-size: 0.82rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.end-undone-item::before { content: '↩'; color: var(--danger); }
+
+@media (max-width: 900px) {
+  .room-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    height: auto;
+  }
+  .room-sidebar { max-height: 50vh; }
+  .join-cards { grid-template-columns: 1fr; }
+  nav { padding: 14px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">U<em>Loop</em></div>
+  <div class="nav-live" id="navLive" style="display:none;">
+    <span class="live-dot"></span> Live Session
+  </div>
+  <button class="nav-back" onclick="goBack()">← Dashboard</button>
+</nav>
+
+
+<!-- ══════════════════════════════
+     LOBBY
+══════════════════════════════ -->
+<div id="lobbyScreen">
+  <div class="lobby-label"><span class="live-dot"></span> Study Stream</div>
+  <h1 class="lobby-title">Study Together,<br><span class="accent">Stay Focused.</span></h1>
+  <p class="lobby-sub">Open your camera, set your plan, and work alongside fellow Gorlocks — in a private group or with the whole university.</p>
+
+  <div class="lobby-stats">
+    <div class="lobby-stat"><span class="live-dot"></span>&nbsp;<strong id="onlineCount">47</strong> students online now</div>
+    <div class="lobby-stat">📹 <strong id="roomCount">12</strong> active rooms</div>
+    <div class="lobby-stat">🔥 <strong>2,841</strong> hours studied today</div>
+  </div>
+
+  <div class="join-cards">
+    <!-- PRIVATE GROUP -->
+    <div class="join-card private" onclick="openPrivateSetup()">
+      <div class="join-card-icon">🔐</div>
+      <span class="join-card-badge">Private Group</span>
+      <div class="join-card-title">Study with<br>Your Group</div>
+      <div class="join-card-desc">Create a private room and invite only your classmates. Perfect for group projects and study squads.</div>
+      <ul class="join-card-features">
+        <li>Generate a shareable invite link</li>
+        <li>Only people with the link can join</li>
+        <li>Name your room & set your subject</li>
+        <li>Shared planner visible to groupmates</li>
+      </ul>
+      <button class="join-card-btn">
+        <span>Create Private Room</span>
+        <span>🔐 →</span>
+      </button>
+    </div>
+
+    <!-- GENERAL GORLOCK -->
+    <div class="join-card general" onclick="joinGeneral()">
+      <div class="join-card-icon">🌍</div>
+      <span class="join-card-badge">General · All Gorlocks</span>
+      <div class="join-card-title">Join the<br>Gorlock Stream</div>
+      <div class="join-card-desc">Drop into the open room and study alongside any Webster student online right now. No invite needed.</div>
+      <ul class="join-card-features">
+        <li>Open to all Gorlock students</li>
+        <li>See who's studying & what</li>
+        <li>Community feed & encouragement</li>
+        <li>Boost each other's streaks</li>
+      </ul>
+      <button class="join-card-btn">
+        <span>Join General Room</span>
+        <span>🌍 →</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ACTIVE ROOMS -->
+  <div class="active-rooms">
+    <div class="active-rooms-label">Active Rooms Right Now</div>
+    <div class="rooms-row" id="activeRoomsList"></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════
+     PRIVATE ROOM SETUP MODAL
+══════════════════════════════ -->
+<div class="modal-overlay" id="privateSetupModal">
+  <div class="setup-modal">
+    <button class="modal-close" onclick="closeModal('privateSetupModal')">✕</button>
+    <div class="modal-icon">🔐</div>
+    <div class="modal-title">Create Your Room</div>
+    <div class="modal-sub">Name your room and share the link with your groupmates. Only people with the link can join.</div>
+
+    <label class="field-label">Room Name</label>
+    <input class="field-input" id="roomNameInput" placeholder="e.g. CS Finals Squad, Marketing Group 3…" />
+
+    <label class="field-label">Subject / Topic</label>
+    <input class="field-input" id="roomSubjectInput" placeholder="e.g. Algorithms, Business Ethics…" />
+
+    <button class="btn-primary" onclick="generateRoomLink()" id="genLinkBtn">Generate Invite Link →</button>
+
+    <div class="link-box" id="linkBox">
+      <div class="link-label-small">🔗 Your Invite Link</div>
+      <div class="link-value" id="linkValue"></div>
+      <div class="link-actions">
+        <button class="link-copy-btn" onclick="copyLink()">📋 Copy Link</button>
+        <button class="link-copy-btn" onclick="shareLink()">↗ Share</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="startPrivateBtn" style="display:none;margin-top:10px;" onclick="startStream('private')">
+      Start Session →
+    </button>
+    <button class="btn-secondary" onclick="closeModal('privateSetupModal')">Cancel</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════
+     STREAM ROOM
+══════════════════════════════ -->
+<div id="streamRoom">
+  <div class="room-layout">
+
+    <!-- VIDEO AREA -->
+    <div class="video-area">
+      <div class="video-area-header">
+        <div class="room-name-display">
+          <span class="room-type-badge" id="roomTypeBadge">General</span>
+          <span class="room-display-name" id="roomDisplayName">Gorlock General Stream</span>
+        </div>
+        <div class="room-live-count">
+          <span class="live-dot"></span>
+          <span id="liveCount">1</span> studying now
+        </div>
+      </div>
+
+      <div class="video-grid" id="videoGrid">
+        <!-- Video tiles injected here -->
+      </div>
+
+      <div class="controls-bar">
+        <button class="ctrl-btn cam-btn" id="camBtn" onclick="toggleCam()" title="Toggle Camera">📹</button>
+        <button class="ctrl-btn mic-btn" id="micBtn" onclick="toggleMic()" title="Toggle Mic">🎙️</button>
+        <button class="ctrl-btn" style="background:var(--surface2);border:1px solid var(--border2);" title="Share Screen">🖥️</button>
+        <button class="ctrl-btn end-btn" onclick="confirmEndSession()">
+          <span>⬛</span> End Session
+        </button>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="room-sidebar">
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" onclick="switchSideTab('planner')">📋 My Plan</button>
+        <button class="sidebar-tab" onclick="switchSideTab('feed')">🌍 Community</button>
+      </div>
+
+      <!-- PLANNER PANEL -->
+      <div class="sidebar-panel active" id="plannerPanel">
+        <div class="planner-panel">
+          <div class="planner-session-info">
+            <div class="session-timer" id="sessionTimer">00:00</div>
+            <div class="session-label">Session Time</div>
+          </div>
+
+          <div class="planner-scroll">
+            <!-- TO DO -->
+            <div>
+              <div class="plan-section-title" style="color:var(--green);"><span class="dot"></span> What I'm Working On</div>
+              <div class="todo-list" id="todoList"></div>
+              <div class="add-task-row">
+                <input class="add-task-input" id="newTaskInput" placeholder="Add a task…" onkeydown="if(event.key==='Enter') addTask()" />
+                <button class="add-task-btn" onclick="addTask()">+</button>
+              </div>
+            </div>
+
+            <!-- DIDN'T DO -->
+            <div id="undoneSection" style="display:none;">
+              <div class="plan-section-title" style="color:var(--danger);"><span class="dot"></span> Didn't Get To</div>
+              <div class="undone-list" id="undoneList"></div>
+            </div>
+
+            <!-- NOTE -->
+            <div>
+              <div class="plan-section-title" style="color:var(--muted);"><span class="dot"></span> Session Note</div>
+              <textarea class="post-textarea" id="sessionNote" placeholder="How is your session going? Any blockers?..." style="min-height:70px;margin-bottom:0;"></textarea>
+            </div>
+          </div>
+
+          <div class="session-summary">
+            <button class="end-session-btn" onclick="confirmEndSession()">⬛ End Session & Share Summary</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMMUNITY FEED PANEL -->
+      <div class="sidebar-panel" id="feedPanel">
+        <div class="feed-panel">
+          <div class="feed-list" id="feedList"></div>
+
+          <div class="post-to-feed">
+            <div class="post-label">Share with the room</div>
+            <textarea class="post-textarea" id="postText" placeholder="Encourage others, share a tip, or just say hi 👋"></textarea>
+            <button class="post-btn" onclick="postToFeed()">Post to Community →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- SESSION END OVERLAY -->
+<div class="end-overlay" id="endOverlay">
+  <div class="end-modal">
+    <span class="end-emoji">🎉</span>
+    <div class="end-title">Session Complete!</div>
+
+    <div class="end-stats">
+      <div class="end-stat">
+        <span class="end-stat-num" id="endTime">00:00</span>
+        <span class="end-stat-label">Time Studied</span>
+      </div>
+      <div class="end-stat">
+        <span class="end-stat-num" id="endDone">0</span>
+        <span class="end-stat-label">Tasks Done</span>
+      </div>
+      <div class="end-stat">
+        <span class="end-stat-num" id="endUndone">0</span>
+        <span class="end-stat-label">Carry Over</span>
+      </div>
+    </div>
+
+    <div class="end-undone-preview" id="endUndoneBox" style="display:none;">
+      <div class="end-undone-label">Carrying over to next session</div>
+      <div class="end-undone-items" id="endUndoneItems"></div>
+    </div>
+
+    <button class="btn-primary" onclick="shareSummaryToFeed()">Share Summary to Community →</button>
+    <button class="btn-secondary" onclick="exitStream()">Back to Lobby</button>
+  </div>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const mockStudents = [
+  { name: "Asel K.",   color: "#7c6af7", task: "Calculus II — Chapter 8" },
+  { name: "Marco R.",  color: "#00c896", task: "Game Theory problem set" },
+  { name: "Elena V.",  color: "#e8902a", task: "Quantum Mech notes" },
+  { name: "Timur B.",  color: "#e85a9a", task: "Economics essay" },
+];
+
+const mockRooms = [
+  { name: "CS Finals Squad",   count: 4, type: "private" },
+  { name: "Marketing Group 3", count: 3, type: "private" },
+  { name: "Silent Study",      count: 11, type: "general" },
+  { name: "Econ Cramming",     count: 5, type: "general" },
+  { name: "Math Gorlocks",     count: 7, type: "general" },
+];
+
+const mockFeed = [
+  {
+    user: "Marco R.", color: "#00c896", time: "2m ago",
+    note: "Super focused today 💪 finished 3/4 tasks already",
+    done: ["Game Theory Ch.5", "Problem Set 3"],
+    undone: ["Final essay outline"],
+    likes: 8, encouraged: false, liked: false
+  },
+  {
+    user: "Timur B.", color: "#e85a9a", time: "14m ago",
+    note: "Struggling with the economics essay but pushing through",
+    done: ["Intro paragraph"],
+    undone: ["Body sections", "Conclusion"],
+    likes: 5, encouraged: false, liked: false
+  },
+  {
+    user: "Asel K.", color: "#7c6af7", time: "27m ago",
+    note: "Calculus makes no sense but I will not give up 😤",
+    done: ["Watched lecture again", "Practice problems 1–10"],
+    undone: ["Practice 11–20", "Chapter review"],
+    likes: 12, encouraged: false, liked: false
+  },
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let currentStream = null; // 'private' | 'general'
+let roomName = '';
+let roomSubject = '';
+let todos = [];
+let sessionStart = null;
+let timerInterval = null;
+let camOn = true;
+let micOn = true;
+let localStream = null;
+let generatedLink = '';
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.onload = () => {
+  renderActiveRooms();
+  renderFeed();
+};
+
+function renderActiveRooms() {
+  const el = document.getElementById('activeRoomsList');
+  el.innerHTML = mockRooms.map(r => `
+    <div class="room-chip" onclick="joinRoomChip('${r.name}', '${r.type}')">
+      <span class="room-chip-dot"></span>
+      <span class="room-chip-name">${r.name}</span>
+      <span class="room-chip-count">${r.count} 👤</span>
+    </div>
+  `).join('');
+}
+
+function joinRoomChip(name, type) {
+  roomName = name;
+  currentStream = type;
+  startStream(type === 'private' ? 'private' : 'general');
+}
+
+// ═══════════════════════════════════════
+// PRIVATE SETUP
+// ═══════════════════════════════════════
+function openPrivateSetup() {
+  document.getElementById('privateSetupModal').classList.add('show');
+  document.getElementById('linkBox').classList.remove('show');
+  document.getElementById('startPrivateBtn').style.display = 'none';
+  document.getElementById('genLinkBtn').style.display = 'block';
+  document.getElementById('roomNameInput').value = '';
+  document.getElementById('roomSubjectInput').value = '';
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function generateRoomLink() {
+  const name = document.getElementById('roomNameInput').value.trim();
+  const subject = document.getElementById('roomSubjectInput').value.trim();
+  if (!name) { document.getElementById('roomNameInput').focus(); return; }
+
+  roomName = name || 'My Study Room';
+  roomSubject = subject;
+
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  generatedLink = `https://uloop.app/stream/join/${code}`;
+  document.getElementById('linkValue').textContent = generatedLink;
+  document.getElementById('linkBox').classList.add('show');
+  document.getElementById('genLinkBtn').style.display = 'none';
+  document.getElementById('startPrivateBtn').style.display = 'block';
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(generatedLink).then(() => {
+    const btn = document.querySelector('.link-copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  }).catch(() => {
+    alert('Link: ' + generatedLink);
+  });
+}
+
+function shareLink() {
+  if (navigator.share) {
+    navigator.share({ title: roomName + ' — ULoop Study Stream', url: generatedLink });
+  } else {
+    copyLink();
+  }
+}
+
+// ═══════════════════════════════════════
+// JOIN GENERAL
+// ═══════════════════════════════════════
+function joinGeneral() {
+  roomName = 'Gorlock General Stream';
+  currentStream = 'general';
+  startStream('general');
+}
+
+// ═══════════════════════════════════════
+// START STREAM
+// ═══════════════════════════════════════
+async function startStream(type) {
+  closeModal('privateSetupModal');
+  currentStream = type;
+
+  document.getElementById('lobbyScreen').style.display = 'none';
+  document.getElementById('streamRoom').style.display = 'block';
+  document.getElementById('navLive').style.display = 'flex';
+
+  const badge = document.getElementById('roomTypeBadge');
+  const displayName = document.getElementById('roomDisplayName');
+  if (type === 'private') {
+    badge.className = 'room-type-badge private-badge';
+    badge.textContent = '🔐 Private';
+    displayName.textContent = roomName || 'My Private Room';
+  } else {
+    badge.className = 'room-type-badge general-badge';
+    badge.textContent = '🌍 General';
+    displayName.textContent = 'Gorlock General Stream';
+  }
+
+  // Start timer
+  sessionStart = Date.now();
+  timerInterval = setInterval(updateTimer, 1000);
+
+  // Get camera
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    camOn = true; micOn = true;
+  } catch(e) {
+    localStream = null;
+    camOn = false; micOn = false;
+  }
+
+  renderVideoGrid();
+  renderFeed();
+  updateLiveCount();
+}
+
+// ═══════════════════════════════════════
+// VIDEO GRID
+// ═══════════════════════════════════════
+function renderVideoGrid() {
+  const grid = document.getElementById('videoGrid');
+  grid.innerHTML = '';
+
+  // Self tile
+  const selfTile = document.createElement('div');
+  selfTile.className = 'video-tile self';
+  selfTile.id = 'selfTile';
+  if (localStream && camOn) {
+    const video = document.createElement('video');
+    video.srcObject = localStream;
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+    selfTile.appendChild(video);
+  } else {
+    selfTile.innerHTML = `
+      <div class="video-placeholder">
+        <div class="video-avatar" style="background:var(--green);color:#050510;">You</div>
+        <div class="video-avatar-name">Camera off</div>
+      </div>`;
+  }
+  selfTile.innerHTML += `<div class="video-tile-info">
+    <span class="video-tile-name">You (Me)</span>
+    <span class="video-tile-mute">${micOn ? '🎙️' : '🔇'}</span>
+  </div>`;
+  grid.appendChild(selfTile);
+
+  // Mock students
+  const count = currentStream === 'general' ? mockStudents.length : Math.floor(Math.random()*3)+1;
+  mockStudents.slice(0, count).forEach(s => {
+    const tile = document.createElement('div');
+    tile.className = 'video-tile';
+    tile.innerHTML = `
+      <div class="video-placeholder">
+        <div class="video-avatar" style="background:${s.color};">${s.name.charAt(0)}</div>
+        <div class="video-avatar-name">${s.task}</div>
+      </div>
+      <div class="video-tile-info">
+        <span class="video-tile-name">${s.name}</span>
+        <span class="video-tile-mute">🎙️</span>
+      </div>`;
+    grid.appendChild(tile);
+  });
+
+  document.getElementById('liveCount').textContent = count + 1;
+}
+
+// ═══════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════
+function toggleCam() {
+  camOn = !camOn;
+  const btn = document.getElementById('camBtn');
+  btn.classList.toggle('off', !camOn);
+  btn.textContent = camOn ? '📹' : '🚫';
+  if (localStream) {
+    localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+    const selfTile = document.getElementById('selfTile');
+    if (!camOn) {
+      const vid = selfTile.querySelector('video');
+      if (vid) vid.style.display = 'none';
+    } else {
+      const vid = selfTile.querySelector('video');
+      if (vid) vid.style.display = 'block';
+    }
+  }
+}
+
+function toggleMic() {
+  micOn = !micOn;
+  const btn = document.getElementById('micBtn');
+  btn.classList.toggle('off', !micOn);
+  btn.textContent = micOn ? '🎙️' : '🔇';
+  if (localStream) {
+    localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  }
+}
+
+// ═══════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════
+function updateTimer() {
+  if (!sessionStart) return;
+  const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2,'0');
+  const s = String(elapsed % 60).padStart(2,'0');
+  document.getElementById('sessionTimer').textContent = m + ':' + s;
+}
+
+function getElapsedStr() {
+  if (!sessionStart) return '00:00';
+  const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2,'0');
+  const s = String(elapsed % 60).padStart(2,'0');
+  return m + ':' + s;
+}
+
+// ═══════════════════════════════════════
+// TODO / PLANNER
+// ═══════════════════════════════════════
+function addTask() {
+  const input = document.getElementById('newTaskInput');
+  const text = input.value.trim();
+  if (!text) return;
+  todos.push({ text, done: false, id: Date.now() });
+  input.value = '';
+  renderTodos();
+}
+
+function renderTodos() {
+  const list = document.getElementById('todoList');
+  list.innerHTML = todos.map(t => `
+    <div class="todo-item">
+      <div class="todo-check ${t.done ? 'done' : ''}" onclick="toggleTodo(${t.id})">
+        ${t.done ? '✓' : ''}
+      </div>
+      <div class="todo-text ${t.done ? 'crossed' : ''}">${t.text}</div>
+      <button class="todo-delete" onclick="deleteTask(${t.id})">✕</button>
+    </div>
+  `).join('');
+
+  // Show undone section if any undone
+  const undone = todos.filter(t => !t.done);
+  const undoneSection = document.getElementById('undoneSection');
+  const undoneList = document.getElementById('undoneList');
+  if (undone.length > 0) {
+    undoneSection.style.display = 'block';
+    undoneList.innerHTML = undone.map(t => `
+      <div class="undone-item">${t.text}</div>
+    `).join('');
+  } else {
+    undoneSection.style.display = 'none';
+  }
+}
+
+function toggleTodo(id) {
+  const t = todos.find(t => t.id === id);
+  if (t) t.done = !t.done;
+  renderTodos();
+}
+
+function deleteTask(id) {
+  todos = todos.filter(t => t.id !== id);
+  renderTodos();
+}
+
+// ═══════════════════════════════════════
+// FEED
+// ═══════════════════════════════════════
+function renderFeed() {
+  const list = document.getElementById('feedList');
+  if (!list) return;
+  list.innerHTML = mockFeed.map((item, i) => `
+    <div class="feed-item">
+      <div class="feed-item-header">
+        <div class="feed-avatar" style="background:${item.color};">${item.user.charAt(0)}</div>
+        <div>
+          <div class="feed-user-name">${item.user}</div>
+        </div>
+        <div class="feed-time">${item.time}</div>
+      </div>
+      <div class="feed-plan-text">${item.note}</div>
+      <div class="feed-task-chips">
+        ${item.done.map(d => `<span class="feed-task-chip done-chip">✓ ${d}</span>`).join('')}
+        ${item.undone.map(u => `<span class="feed-task-chip undone-chip">↩ ${u}</span>`).join('')}
+      </div>
+      <div class="feed-actions">
+        <button class="feed-like-btn ${item.liked ? 'liked' : ''}" onclick="likeFeed(${i})">
+          ❤️ ${item.likes}
+        </button>
+        <button class="feed-encourage-btn" onclick="encourageFeed(${i}, this)">
+          💪 Encourage
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function likeFeed(i) {
+  mockFeed[i].liked = !mockFeed[i].liked;
+  mockFeed[i].likes += mockFeed[i].liked ? 1 : -1;
+  renderFeed();
+}
+
+function encourageFeed(i, btn) {
+  btn.textContent = '🔥 Sent!';
+  btn.style.color = 'var(--green)';
+  btn.style.borderColor = 'rgba(0,229,160,0.3)';
+  btn.disabled = true;
+}
+
+function postToFeed() {
+  const text = document.getElementById('postText').value.trim();
+  if (!text) return;
+  mockFeed.unshift({
+    user: 'You', color: 'var(--green)',
+    time: 'just now', note: text,
+    done: todos.filter(t => t.done).map(t => t.text),
+    undone: todos.filter(t => !t.done).map(t => t.text),
+    likes: 0, liked: false, encouraged: false
+  });
+  document.getElementById('postText').value = '';
+  renderFeed();
+}
+
+// ═══════════════════════════════════════
+// END SESSION
+// ═══════════════════════════════════════
+function confirmEndSession() {
+  const doneCount = todos.filter(t => t.done).length;
+  const undoneItems = todos.filter(t => !t.done);
+
+  document.getElementById('endTime').textContent = getElapsedStr();
+  document.getElementById('endDone').textContent = doneCount;
+  document.getElementById('endUndone').textContent = undoneItems.length;
+
+  const box = document.getElementById('endUndoneBox');
+  const itemsEl = document.getElementById('endUndoneItems');
+  if (undoneItems.length > 0) {
+    box.style.display = 'block';
+    itemsEl.innerHTML = undoneItems.map(t => `<div class="end-undone-item">${t.text}</div>`).join('');
+  } else {
+    box.style.display = 'none';
+  }
+
+  document.getElementById('endOverlay').classList.add('show');
+  clearInterval(timerInterval);
+}
+
+function shareSummaryToFeed() {
+  const doneItems = todos.filter(t => t.done);
+  const undoneItems = todos.filter(t => !t.done);
+  const note = document.getElementById('sessionNote').value.trim() || 'Just finished a study session!';
+
+  mockFeed.unshift({
+    user: 'You', color: 'var(--green)',
+    time: 'just now',
+    note: `✅ Session complete! ${getElapsedStr()} — ${note}`,
+    done: doneItems.map(t => t.text),
+    undone: undoneItems.map(t => t.text),
+    likes: 0, liked: false, encouraged: false
+  });
+
+  document.getElementById('endOverlay').classList.remove('show');
+  exitStream();
+}
+
+function exitStream() {
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  clearInterval(timerInterval);
+  timerInterval = null;
+  sessionStart = null;
+  todos = [];
+  camOn = true; micOn = true;
+
+  document.getElementById('endOverlay').classList.remove('show');
+  document.getElementById('streamRoom').style.display = 'none';
+  document.getElementById('lobbyScreen').style.display = 'flex';
+  document.getElementById('navLive').style.display = 'none';
+  document.getElementById('sessionTimer').textContent = '00:00';
+
+  renderFeed();
+}
+
+// ═══════════════════════════════════════
+// SIDEBAR TABS
+// ═══════════════════════════════════════
+function switchSideTab(tab) {
+  document.querySelectorAll('.sidebar-tab').forEach((t,i) => {
+    t.classList.toggle('active', (tab === 'planner' && i===0) || (tab === 'feed' && i===1));
+  });
+  document.getElementById('plannerPanel').classList.toggle('active', tab === 'planner');
+  document.getElementById('feedPanel').classList.toggle('active', tab === 'feed');
+}
+
+// ═══════════════════════════════════════
+// MISC
+// ═══════════════════════════════════════
+function goBack() {
+  if (document.getElementById('streamRoom').style.display !== 'none') {
+    if (confirm('Leave this session?')) exitStream();
+  } else {
+    window.history.back();
+  }
+}
+
+function updateLiveCount() {
+  const base = currentStream === 'general' ? 47 : 4;
+  const variation = Math.floor(Math.random() * 5);
+  document.getElementById('liveCount').textContent = base + variation;
+}
+
+// Close modals on outside click
+document.getElementById('privateSetupModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('privateSetupModal');
+});
+</script>
+</body>
+</html>
