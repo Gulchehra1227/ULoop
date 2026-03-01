@@ -616,20 +616,24 @@ function filterProfessors() {
   renderProfGrid(filtered);
 }
 
-// ── Call Anthropic API ──
+// ── Call OpenRouter API ──
 async function callAPI(msgs) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer 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",
+      "HTTP-Referer": window.location.origin,
+    },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "meta-llama/llama-3.1-70b-instruct",
       max_tokens: 1000,
       system: SYSTEM_PROMPT,
       messages: msgs,
     }),
   });
   const data = await res.json();
-  return data.content?.[0]?.text || "Sorry, I couldn't fetch feedback right now.";
+  return data.choices?.[0]?.message?.content || "Sorry, I couldn't fetch feedback right now.";
 }
 
 // ── Render Messages ──
@@ -803,18 +807,22 @@ async function askGeneral() {
   const fullQuery = `Here are the professors in the system: ${JSON.stringify(professors)}. Question: ${query}`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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",
+        "HTTP-Referer": window.location.origin,
+      },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "meta-llama/llama-3.1-70b-instruct",
         max_tokens: 1000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: fullQuery }],
       }),
     });
     const data = await res.json();
-    responseEl.textContent = data.content?.[0]?.text || "No response.";
+    responseEl.textContent = data.choices?.[0]?.message?.content || "No response.";
   } catch(e) {
     responseEl.textContent = "Error connecting to AI.";
   }
@@ -834,4 +842,3 @@ renderProfGrid(professors);
 </script>
 </body>
 </html>
-
